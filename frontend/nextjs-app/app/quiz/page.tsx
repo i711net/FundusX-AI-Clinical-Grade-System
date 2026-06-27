@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import { ArrowLeft, CheckCircle2, Loader2, RotateCcw, X } from "lucide-react";
+import { ArrowLeft, CheckCircle2, ChevronLeft, ChevronRight, Loader2, RotateCcw, X } from "lucide-react";
 import { LanguageToggle } from "../components/LanguageToggle";
 import { useLanguage } from "../i18n";
 import { FundusImage, isSupabaseConfigured, supabase } from "../lib/supabase";
@@ -127,19 +127,36 @@ export default function QuizPage() {
       reference_grade: currentQuestion.disease_grade,
       is_correct: selected === currentQuestion.disease_grade,
     });
-
-    if (currentIndex + 1 >= questions.length) {
-      setFinalAnswers(nextAnswers);
-      setFinished(true);
-      return;
-    }
-
-    setCurrentIndex((value) => value + 1);
-    setSelected(null);
+    return nextAnswers;
   }
 
   function answerFor(imageId: string) {
     return displayedAnswers.find((answer) => answer.imageId === imageId);
+  }
+
+  async function goToQuestion(nextIndex: number) {
+    if (nextIndex < 0 || nextIndex >= questions.length) return;
+    const latestAnswers = selected !== null ? await saveAnswer() : answers;
+    const target = questions[nextIndex];
+    const existing = (latestAnswers || answers).find((answer) => answer.imageId === target.id);
+    setCurrentIndex(nextIndex);
+    setSelected(existing?.selectedGrade ?? null);
+  }
+
+  async function saveAndNext() {
+    const nextAnswers = selected !== null ? await saveAnswer() : answers;
+    if (currentIndex + 1 < questions.length) {
+      const target = questions[currentIndex + 1];
+      const existing = (nextAnswers || answers).find((answer) => answer.imageId === target.id);
+      setCurrentIndex((value) => value + 1);
+      setSelected(existing?.selectedGrade ?? null);
+    }
+  }
+
+  async function submitQuiz() {
+    const nextAnswers = selected !== null ? await saveAnswer() : answers;
+    setFinalAnswers(nextAnswers || answers);
+    setFinished(true);
   }
 
   const reviewQuestion = questions.find((question) => question.id === reviewImageId);
@@ -181,9 +198,35 @@ export default function QuizPage() {
                   </button>
                 ))}
               </div>
-              <button className="primaryButton" disabled={selected === null} onClick={saveAnswer}>
-                {currentIndex + 1 >= questions.length ? "提交并查看成绩 / Submit" : "保存并下一题 / Next"}
-              </button>
+              <div className="quizNav">
+                <button className="secondaryButton inlineButton" disabled={currentIndex === 0} onClick={() => goToQuestion(currentIndex - 1)}>
+                  <ChevronLeft size={18} /> 上一题 / Previous
+                </button>
+                {currentIndex + 1 < questions.length ? (
+                  <button className="primaryButton inlineButton" onClick={saveAndNext}>
+                    保存并下一题 / Save & Next <ChevronRight size={18} />
+                  </button>
+                ) : (
+                  <button className="primaryButton inlineButton" onClick={submitQuiz}>
+                    提交并查看成绩 / Submit
+                  </button>
+                )}
+              </div>
+              <div className="answerProgress">
+                {questions.map((question, index) => {
+                  const answered = Boolean(answers.find((answer) => answer.imageId === question.id)) || question.id === currentQuestion.id && selected !== null;
+                  return (
+                    <button
+                      className={`${index === currentIndex ? "active" : ""} ${answered ? "answered" : ""}`}
+                      key={question.id}
+                      onClick={() => goToQuestion(index)}
+                      aria-label={`Question ${index + 1}`}
+                    >
+                      {index + 1}
+                    </button>
+                  );
+                })}
+              </div>
             </>
           )}
 

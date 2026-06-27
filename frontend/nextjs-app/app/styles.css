@@ -568,6 +568,48 @@ p {
   margin: 22px 0;
 }
 
+.quizNav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.quizNav .primaryButton {
+  margin-top: 0;
+}
+
+.answerProgress {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.answerProgress button {
+  width: 34px;
+  height: 34px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #ffffff;
+  color: var(--muted);
+  cursor: pointer;
+  font-weight: 800;
+}
+
+.answerProgress button.answered {
+  border-color: rgba(6, 118, 71, 0.35);
+  background: #ecfdf3;
+  color: #067647;
+}
+
+.answerProgress button.active {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: #ffffff;
+}
+
 .gradeButton {
   border: 1px solid var(--line);
   background: #f8fafc;
