@@ -1,37 +1,30 @@
+"use client";
+
 import Link from "next/link";
-import { Activity, ClipboardList, FileText, UploadCloud } from "lucide-react";
+import { ClipboardList, FileText, UploadCloud } from "lucide-react";
+import { AppHeader } from "./components/AppHeader";
+import { useLanguage } from "./i18n";
 
 const modules = [
-  { href: "/ai", title: "AI Detection", text: "Upload a fundus image and generate a structured AI report.", icon: UploadCloud },
-  { href: "/quiz", title: "Doctor Quiz", text: "Review 100 fundus images and compare answers with AI output.", icon: ClipboardList },
-  { href: "/report", title: "Clinical Report", text: "View the report format used by the API and paper workflow.", icon: FileText },
+  { href: "/ai", icon: UploadCloud },
+  { href: "/quiz", icon: ClipboardList },
+  { href: "/report", icon: FileText },
 ];
 
 export default function HomePage() {
+  const { t } = useLanguage();
+
   return (
     <main className="shell">
-      <header className="topbar">
-        <div className="brand">
-          <Activity size={24} />
-          <span>FundusX-AI</span>
-        </div>
-        <nav>
-          <Link href="/ai">AI</Link>
-          <Link href="/quiz">Quiz</Link>
-          <Link href="/report">Report</Link>
-        </nav>
-      </header>
+      <AppHeader />
 
       <section className="hero">
         <div>
-          <h1>Clinically interpretable fundus image AI research system</h1>
-          <p>
-            A GitHub-ready project for diabetic retinopathy classification, lesion detection,
-            Grad-CAM visualization, doctor testing, structured reporting, and paper reproduction.
-          </p>
-          <Link className="primaryButton" href="/ai">Start AI Analysis</Link>
+          <h1>{t.home.title}</h1>
+          <p>{t.home.subtitle}</p>
+          <Link className="primaryButton" href="/ai">{t.home.start}</Link>
         </div>
-        <div className="fundusPanel" aria-label="fundus analysis preview">
+        <div className="fundusPanel" aria-label={t.home.previewLabel}>
           <div className="retina">
             <span className="disc" />
             <span className="lesion lesionA" />
@@ -40,20 +33,21 @@ export default function HomePage() {
             <span className="vessel vesselB" />
           </div>
           <div className="summaryStrip">
-            <span>Risk: Moderate</span>
-            <span>Confidence: 0.93</span>
+            <span>{t.home.riskModerate}</span>
+            <span>{t.home.confidence}</span>
           </div>
         </div>
       </section>
 
       <section className="moduleGrid">
-        {modules.map((module) => {
+        {modules.map((module, index) => {
           const Icon = module.icon;
+          const content = t.home.modules[index];
           return (
             <Link className="moduleCard" href={module.href} key={module.href}>
               <Icon size={22} />
-              <h2>{module.title}</h2>
-              <p>{module.text}</p>
+              <h2>{content.title}</h2>
+              <p>{content.text}</p>
             </Link>
           );
         })}

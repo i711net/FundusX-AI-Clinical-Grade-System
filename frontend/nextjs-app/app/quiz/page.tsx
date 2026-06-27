@@ -3,10 +3,11 @@
 import Link from "next/link";
 import { useState } from "react";
 import { ArrowLeft, CheckCircle2 } from "lucide-react";
-
-const grades = ["No DR", "Mild", "Moderate", "Severe", "Proliferative"];
+import { LanguageToggle } from "../components/LanguageToggle";
+import { useLanguage } from "../i18n";
 
 export default function QuizPage() {
+  const { t } = useLanguage();
   const [index, setIndex] = useState(1);
   const [selected, setSelected] = useState<number | null>(null);
   const [saved, setSaved] = useState(false);
@@ -19,7 +20,10 @@ export default function QuizPage() {
 
   return (
     <main className="shell compact">
-      <Link className="backLink" href="/"><ArrowLeft size={18} /> Home</Link>
+      <div className="pageTools">
+        <Link className="backLink" href="/"><ArrowLeft size={18} /> {t.nav.home}</Link>
+        <LanguageToggle />
+      </div>
       <section className="workspace">
         <div className="quizImage">
           <div className="retina large">
@@ -29,13 +33,13 @@ export default function QuizPage() {
             <span className="vessel vesselA" />
             <span className="vessel vesselB" />
           </div>
-          <p>Image {index.toString().padStart(3, "0")} / 100</p>
+          <p>{t.quiz.image} {index.toString().padStart(3, "0")} / 100</p>
         </div>
         <div className="uploadPanel">
-          <h1>Doctor Quiz</h1>
-          <p>Select a diabetic retinopathy grade for each of 100 fundus images. Connect this page to Supabase when real images are ready.</p>
+          <h1>{t.quiz.title}</h1>
+          <p>{t.quiz.intro}</p>
           <div className="gradeGrid">
-            {grades.map((grade, gradeIndex) => (
+            {t.quiz.grades.map((grade, gradeIndex) => (
               <button
                 className={selected === gradeIndex ? "gradeButton active" : "gradeButton"}
                 key={grade}
@@ -45,9 +49,9 @@ export default function QuizPage() {
               </button>
             ))}
           </div>
-          <button className="primaryButton" disabled={selected === null} onClick={() => setSaved(true)}>Save Response</button>
-          {saved && <p className="success"><CheckCircle2 size={18} /> Response saved locally for demo.</p>}
-          <button className="secondaryButton" onClick={next}>Next Image</button>
+          <button className="primaryButton" disabled={selected === null} onClick={() => setSaved(true)}>{t.quiz.save}</button>
+          {saved && <p className="success"><CheckCircle2 size={18} /> {t.quiz.saved}</p>}
+          <button className="secondaryButton" onClick={next}>{t.quiz.next}</button>
         </div>
       </section>
     </main>
