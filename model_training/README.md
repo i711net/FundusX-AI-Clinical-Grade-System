@@ -118,6 +118,41 @@ FUNDUSX_CLASSIFIER_WEIGHTS=weights/classifier_efficientnet_b3.pth
 
 The FastAPI `/analyze` endpoint will stop returning demo results once the file exists.
 
+## Optional: Import Training Images into Doctor Quiz
+
+The training dataset can also become the website doctor quiz image bank. This uploads compressed JPG copies to Cloudflare R2 and writes quiz records into Supabase.
+
+First run a dry run:
+
+```bash
+python model_training/import_imagefolder_to_r2_supabase.py ^
+  --data-dir data/fundus_dr ^
+  --dry-run
+```
+
+Then configure environment variables:
+
+```text
+R2_ACCOUNT_ID
+R2_ACCESS_KEY_ID
+R2_SECRET_ACCESS_KEY
+R2_BUCKET_NAME
+R2_PUBLIC_BASE_URL
+SUPABASE_URL
+SUPABASE_SERVICE_ROLE_KEY
+```
+
+Import all images:
+
+```bash
+python model_training/import_imagefolder_to_r2_supabase.py ^
+  --data-dir data/fundus_dr ^
+  --max-size 900 ^
+  --quality 82
+```
+
+After import, `/quiz` will randomly sample 10 active `quiz` images from Supabase.
+
 ## Important Medical Note
 
 This model is for research and AI-assisted screening only. It is not a certified diagnostic device. Before any clinical use, validate on an external dataset and with ophthalmologist review.

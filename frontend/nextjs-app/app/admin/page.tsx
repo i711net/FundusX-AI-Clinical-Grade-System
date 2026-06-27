@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, Database, FileText, ImagePlus, Loader2, LogOut, Plus, RefreshCw, Trash2, UploadCloud } from "lucide-react";
+import { ArrowLeft, Database, FileText, ImagePlus, Loader2, LogOut, Plus, RefreshCw, Save, Trash2, UploadCloud } from "lucide-react";
 import { LanguageToggle } from "../components/LanguageToggle";
 import { AiReport, FundusImage, Quiz, isSupabaseConfigured, supabase } from "../lib/supabase";
 
@@ -137,6 +137,28 @@ export default function AdminPage() {
     }
   }
 
+  async function updateImageMetadata(image: FundusImage, formData: FormData) {
+    setMessage("");
+    const diseaseGradeValue = String(formData.get("disease_grade") || "");
+    const payload = {
+      image_code: String(formData.get("image_code") || "").trim() || null,
+      title: String(formData.get("title") || "").trim() || null,
+      image_type: String(formData.get("image_type") || "quiz"),
+      diagnosis_label: String(formData.get("diagnosis_label") || "").trim() || null,
+      disease_grade: diseaseGradeValue === "" ? null : Number(diseaseGradeValue),
+      is_active: String(formData.get("is_active")) === "true",
+    };
+
+    const { error } = await supabase.from("fundus_images").update(payload).eq("id", image.id);
+    if (error) {
+      setMessage(error.message);
+      return;
+    }
+
+    setMessage("图片信息已保存。");
+    await loadAll();
+  }
+
   async function createQuiz(formData: FormData) {
     setMessage("");
     const title = String(formData.get("title") || "");
@@ -247,13 +269,46 @@ export default function AdminPage() {
                 {images.map((image) => (
                   <article className="imageCard" key={image.id}>
                     <img src={image.image_url} alt={image.title || image.image_code || "fundus image"} />
-                    <div className="imageCardBody">
-                      <strong>{image.image_code || "未编号 / No ID"}</strong>
-                      <span>{image.title || "未命名 / Untitled"}</span>
-                      <span>类型 / Type: {image.image_type}</span>
-                      <span>分级 / Grade: {image.disease_grade ?? "-"}</span>
-                      <span>{image.is_active ? "启用 / Active" : "停用 / Disabled"}</span>
-                    </div>
+                    <form className="imageEditForm" action={(formData) => updateImageMetadata(image, formData)}>
+                      <label>
+                        编号 / ID
+                        <input name="image_code" defaultValue={image.image_code || ""} />
+                      </label>
+                      <label>
+                        标题 / Title
+                        <input name="title" defaultValue={image.title || ""} />
+                      </label>
+                      <label>
+                        类型 / Type
+                        <select name="image_type" defaultValue={image.image_type}>
+                          <option value="quiz">考试图片 / Quiz</option>
+                          <option value="upload">用户上传 / Upload</option>
+                          <option value="validation">验证集 / Validation</option>
+                          <option value="paper">论文图 / Paper</option>
+                        </select>
+                      </label>
+                      <label>
+                        正确分级 / Correct grade
+                        <select name="disease_grade" defaultValue={image.disease_grade ?? ""}>
+                          <option value="">未设置 / Not set</option>
+                          {gradeLabels.map((grade, index) => <option value={index} key={grade}>{index} - {grade}</option>)}
+                        </select>
+                      </label>
+                      <label>
+                        诊断标签 / Diagnosis
+                        <input name="diagnosis_label" defaultValue={image.diagnosis_label || ""} />
+                      </label>
+                      <label>
+                        状态 / Status
+                        <select name="is_active" defaultValue={String(image.is_active)}>
+                          <option value="true">启用 / Active</option>
+                          <option value="false">停用 / Disabled</option>
+                        </select>
+                      </label>
+                      <button className="secondaryButton inlineButton">
+                        <Save size={16} /> 保存 / Save
+                      </button>
+                    </form>
                     <div className="imageActions">
                       {image.is_active && (
                         <button className="secondaryButton inlineButton" onClick={() => disableImage(image)}>
