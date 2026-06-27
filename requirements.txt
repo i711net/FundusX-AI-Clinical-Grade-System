@@ -1,0 +1,16 @@
+torch
+torchvision
+timm
+ultralytics
+opencv-python
+fastapi
+uvicorn[standard]
+python-multipart
+numpy
+pandas
+matplotlib
+scikit-learn
+pillow
+pydantic
+sqlalchemy
+supabase

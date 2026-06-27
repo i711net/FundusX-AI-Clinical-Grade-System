@@ -1,0 +1,375 @@
+:root {
+  --bg: #f6f8fb;
+  --surface: #ffffff;
+  --text: #102033;
+  --muted: #64748b;
+  --line: #d9e2ec;
+  --accent: #176b87;
+  --accent-2: #24a19c;
+  --danger: #b42318;
+  --success: #067647;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button,
+input {
+  font: inherit;
+}
+
+.shell {
+  width: min(1160px, calc(100% - 32px));
+  margin: 0 auto;
+  padding: 28px 0 56px;
+}
+
+.compact {
+  width: min(1040px, calc(100% - 32px));
+}
+
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 16px 0;
+}
+
+.brand,
+.backLink,
+.success {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.brand {
+  font-weight: 800;
+  font-size: 20px;
+}
+
+nav {
+  display: flex;
+  gap: 22px;
+  color: var(--muted);
+  font-weight: 650;
+}
+
+.hero {
+  min-height: 520px;
+  display: grid;
+  grid-template-columns: 1.05fr 0.95fr;
+  align-items: center;
+  gap: 56px;
+}
+
+h1 {
+  margin: 0;
+  font-size: clamp(36px, 6vw, 70px);
+  line-height: 1.02;
+  letter-spacing: 0;
+}
+
+h2,
+h3,
+p {
+  margin-top: 0;
+}
+
+.hero p,
+.uploadPanel p,
+.reportHeader p,
+.muted {
+  color: var(--muted);
+  line-height: 1.65;
+}
+
+.primaryButton,
+.secondaryButton,
+.gradeButton {
+  border: 0;
+  border-radius: 8px;
+  cursor: pointer;
+  min-height: 44px;
+  font-weight: 750;
+}
+
+.primaryButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 12px;
+  padding: 0 18px;
+  background: var(--accent);
+  color: #ffffff;
+}
+
+.primaryButton:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.secondaryButton {
+  background: #e7eef4;
+  color: var(--text);
+}
+
+.fundusPanel,
+.uploadPanel,
+.resultPanel,
+.quizImage,
+.report {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  box-shadow: 0 18px 42px rgba(16, 32, 51, 0.08);
+}
+
+.fundusPanel {
+  padding: 22px;
+}
+
+.retina {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 62% 48%, rgba(255, 246, 166, 0.95), rgba(255, 246, 166, 0) 10%),
+    radial-gradient(circle at 47% 50%, #b83a2e, #7d1f28 56%, #35111d 100%);
+}
+
+.retina.large {
+  width: min(420px, 100%);
+  margin: 0 auto;
+}
+
+.disc,
+.lesion,
+.vessel {
+  position: absolute;
+  display: block;
+}
+
+.disc {
+  width: 15%;
+  height: 15%;
+  right: 26%;
+  top: 41%;
+  border-radius: 50%;
+  background: #f7e59b;
+}
+
+.lesion {
+  width: 18px;
+  height: 18px;
+  border: 2px solid #fcd34d;
+  border-radius: 4px;
+}
+
+.lesionA {
+  left: 32%;
+  top: 34%;
+}
+
+.lesionB {
+  left: 52%;
+  top: 62%;
+}
+
+.vessel {
+  width: 44%;
+  height: 3px;
+  background: rgba(255, 210, 210, 0.6);
+  transform-origin: right center;
+}
+
+.vesselA {
+  right: 33%;
+  top: 48%;
+  transform: rotate(24deg);
+}
+
+.vesselB {
+  right: 32%;
+  top: 52%;
+  transform: rotate(-31deg);
+}
+
+.summaryStrip,
+.metricRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.summaryStrip {
+  margin-top: 18px;
+  padding: 14px;
+  background: #eef8f7;
+  border-radius: 8px;
+  font-weight: 750;
+}
+
+.moduleGrid,
+.workspace {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 18px;
+}
+
+.workspace {
+  grid-template-columns: 0.95fr 1.05fr;
+  margin-top: 28px;
+}
+
+.moduleCard {
+  min-height: 190px;
+  padding: 22px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+
+.moduleCard h2 {
+  margin: 22px 0 10px;
+}
+
+.moduleCard p {
+  color: var(--muted);
+  line-height: 1.55;
+}
+
+.backLink {
+  margin: 12px 0;
+  color: var(--muted);
+  font-weight: 750;
+}
+
+.uploadPanel,
+.resultPanel,
+.quizImage,
+.report {
+  padding: 26px;
+}
+
+.dropzone {
+  display: grid;
+  place-items: center;
+  gap: 12px;
+  min-height: 190px;
+  margin: 18px 0;
+  border: 2px dashed #9fb5c8;
+  border-radius: 8px;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.dropzone input {
+  display: none;
+}
+
+.resultStack {
+  display: grid;
+  gap: 16px;
+}
+
+.metricRow {
+  padding: 14px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.metricRow span {
+  color: var(--muted);
+}
+
+.notice {
+  padding: 12px;
+  border-radius: 8px;
+  background: #fff7ed;
+  color: #9a3412;
+  font-weight: 700;
+}
+
+.error {
+  color: var(--danger);
+  font-weight: 700;
+}
+
+.success {
+  color: var(--success);
+  font-weight: 750;
+}
+
+.lesionList {
+  margin: 0;
+  padding-left: 20px;
+  color: var(--muted);
+}
+
+.gradeGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  margin: 22px 0;
+}
+
+.gradeButton {
+  border: 1px solid var(--line);
+  background: #f8fafc;
+  color: var(--text);
+}
+
+.gradeButton.active {
+  border-color: var(--accent-2);
+  background: #e6fffb;
+}
+
+.reportHeader {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 22px;
+}
+
+.reportHeader h1 {
+  font-size: clamp(28px, 4vw, 44px);
+}
+
+.reportBody {
+  padding-top: 20px;
+}
+
+@media (max-width: 860px) {
+  .hero,
+  .workspace,
+  .moduleGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .hero {
+    gap: 26px;
+    padding-top: 28px;
+  }
+
+  nav {
+    display: none;
+  }
+}

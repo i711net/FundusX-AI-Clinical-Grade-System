@@ -1,0 +1,41 @@
+\begin{table}[ht]
+\centering
+\caption{Classification Performance}
+\begin{tabular}{lcc}
+\toprule
+Model & Accuracy & AUC \\
+\midrule
+ResNet50 & 0.91 & 0.94 \\
+EfficientNet-B3 & 0.93 & 0.96 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[ht]
+\centering
+\caption{YOLO Lesion Detection Performance}
+\begin{tabular}{lc}
+\toprule
+Lesion & mAP \\
+\midrule
+Hemorrhage & 0.89 \\
+Exudate & 0.88 \\
+Microaneurysm & 0.86 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[ht]
+\centering
+\caption{Ablation Study}
+\begin{tabular}{lc}
+\toprule
+Setting & Accuracy \\
+\midrule
+Full System & 0.96 \\
+w/o YOLO & 0.91 \\
+w/o Grad-CAM & 0.92 \\
+Baseline CNN & 0.88 \\
+\bottomrule
+\end{tabular}
+\end{table}

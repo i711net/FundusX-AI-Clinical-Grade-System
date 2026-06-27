@@ -1,0 +1,54 @@
+\documentclass[conference]{IEEEtran}
+\usepackage{graphicx}
+\usepackage{amsmath}
+\usepackage{booktabs}
+\usepackage{cite}
+
+\title{FundusX-AI: A Clinically Interpretable Multi-Task Deep Learning System for Diabetic Retinopathy Detection}
+
+\author{\IEEEauthorblockN{Author Name}
+\IEEEauthorblockA{Department of Ophthalmology / Artificial Intelligence Lab\\
+Institution Name\\
+Email: author@example.com}}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+We propose FundusX-AI, an end-to-end deep learning system for fundus image analysis. The system integrates diabetic retinopathy classification, lesion-level detection, Grad-CAM explainability, structured clinical reporting, and web-based deployment. The goal is to support reproducible research and provide a clinically interpretable prototype for ophthalmology AI studies.
+\end{abstract}
+
+\begin{IEEEkeywords}
+fundus image, diabetic retinopathy, deep learning, EfficientNet, YOLO, Grad-CAM, medical AI
+\end{IEEEkeywords}
+
+\section{Introduction}
+Diabetic retinopathy is a leading cause of preventable vision loss. Automated fundus image analysis has the potential to improve screening efficiency, but clinical adoption requires robust classification, interpretable evidence, lesion-level localization, and reproducible evaluation.
+
+\section{Methods}
+FundusX-AI contains three major components: an EfficientNet-B3 classifier for disease grading, a YOLOv8 lesion detector for local pathological signs, and a Grad-CAM module for visual explanation.
+
+\subsection{Classification Model}
+The classification model predicts five diabetic retinopathy grades: no DR, mild, moderate, severe, and proliferative DR.
+
+\subsection{Lesion Detection}
+The lesion detector localizes microaneurysm, hemorrhage, exudate, and neovascularization candidates.
+
+\subsection{Explainability}
+Grad-CAM heatmaps are generated to visualize regions contributing to the classification result.
+
+\section{Experiments}
+We evaluate classification accuracy, macro AUC, lesion detection mAP, and ablation settings.
+
+\input{results.tex}
+
+\section{Discussion}
+The system demonstrates how multi-task learning and explainability can be combined in a deployable clinical research prototype. Further validation on external datasets and prospective clinical cohorts is required.
+
+\section{Conclusion}
+FundusX-AI provides a reproducible engineering foundation for diabetic retinopathy AI research, integrating model training, inference, visualization, reporting, and deployment.
+
+\bibliographystyle{IEEEtran}
+\bibliography{references}
+
+\end{document}

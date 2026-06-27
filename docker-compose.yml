@@ -1,0 +1,11 @@
+services:
+  api:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      - FUNDUSX_CLASSIFIER_WEIGHTS=/app/weights/classifier_efficientnet_b3.pth
+      - FUNDUSX_YOLO_WEIGHTS=/app/weights/yolo_lesion_detector.pt
+    volumes:
+      - ./weights:/app/weights
+      - ./figures:/app/figures

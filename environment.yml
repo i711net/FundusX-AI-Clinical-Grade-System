@@ -1,0 +1,23 @@
+name: fundusx-ai
+channels:
+  - pytorch
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.10
+  - pip
+  - numpy
+  - pandas
+  - matplotlib
+  - scikit-learn
+  - pillow
+  - pip:
+      - torch
+      - torchvision
+      - timm
+      - ultralytics
+      - opencv-python
+      - fastapi
+      - uvicorn[standard]
+      - python-multipart
+      - supabase
