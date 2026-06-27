@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import { ArrowLeft, CheckCircle2, Loader2, RotateCcw } from "lucide-react";
+import { ArrowLeft, CheckCircle2, Loader2, RotateCcw, X } from "lucide-react";
 import { LanguageToggle } from "../components/LanguageToggle";
 import { useLanguage } from "../i18n";
 import { FundusImage, isSupabaseConfigured, supabase } from "../lib/supabase";
@@ -66,6 +66,7 @@ export default function QuizPage() {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
   const [finished, setFinished] = useState(false);
+  const [reviewImageId, setReviewImageId] = useState<string | null>(null);
 
   const currentQuestion = questions[currentIndex];
   const displayedAnswers = finished ? finalAnswers : answers;
@@ -141,6 +142,9 @@ export default function QuizPage() {
     return displayedAnswers.find((answer) => answer.imageId === imageId);
   }
 
+  const reviewQuestion = questions.find((question) => question.id === reviewImageId);
+  const reviewAnswer = reviewQuestion ? answerFor(reviewQuestion.id) : undefined;
+
   return (
     <main className="shell compact">
       <div className="pageTools">
@@ -198,7 +202,16 @@ export default function QuizPage() {
                   const answer = answerFor(question.id);
                   const correct = answer?.selectedGrade === question.disease_grade;
                   return (
-                    <article className={correct ? "reviewItem correct" : "reviewItem wrong"} key={question.id}>
+                    <article
+                      className={correct ? "reviewItem correct" : "reviewItem wrong"}
+                      key={question.id}
+                      onClick={() => setReviewImageId(question.id)}
+                      role="button"
+                      tabIndex={0}
+                      onKeyDown={(event) => {
+                        if (event.key === "Enter" || event.key === " ") setReviewImageId(question.id);
+                      }}
+                    >
                       <img src={question.image_url} alt={question.title || question.image_code || "review"} />
                       <div>
                         <strong>{index + 1}. {question.image_code || question.title || question.id}</strong>
@@ -222,6 +235,21 @@ export default function QuizPage() {
           )}
         </div>
       </section>
+      {reviewQuestion && (
+        <div className="imageModal" role="dialog" aria-modal="true">
+          <div className="imageModalContent">
+            <button className="modalClose" onClick={() => setReviewImageId(null)} aria-label="Close">
+              <X size={22} />
+            </button>
+            <img src={reviewQuestion.image_url} alt={reviewQuestion.title || reviewQuestion.image_code || "review large"} />
+            <div className="modalInfo">
+              <strong>{reviewQuestion.image_code || reviewQuestion.title || reviewQuestion.id}</strong>
+              <span>你的答案 / Your answer: {reviewAnswer ? t.quiz.grades[reviewAnswer.selectedGrade] : "-"}</span>
+              <span>正确答案 / Correct: {reviewQuestion.disease_grade !== null ? t.quiz.grades[reviewQuestion.disease_grade] : "-"}</span>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 }
