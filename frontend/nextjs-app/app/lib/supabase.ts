@@ -11,6 +11,7 @@ export type FundusImage = {
   id: string;
   image_url: string;
   storage_key: string | null;
+  image_code: string | null;
   image_type: "quiz" | "upload" | "validation" | "paper";
   title: string | null;
   diagnosis_label: string | null;

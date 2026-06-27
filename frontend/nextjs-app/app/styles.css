@@ -168,6 +168,21 @@ p {
   color: var(--text);
 }
 
+.dangerButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 40px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 8px;
+  background: #fee4e2;
+  color: #b42318;
+  cursor: pointer;
+  font-weight: 800;
+}
+
 .fundusPanel,
 .uploadPanel,
 .resultPanel,
@@ -325,9 +340,54 @@ p {
   display: none;
 }
 
+.uploadPreview {
+  width: min(100%, 320px);
+  aspect-ratio: 4 / 3;
+  object-fit: contain;
+  border-radius: 8px;
+  background: #101828;
+}
+
+.emptyResult {
+  display: grid;
+  place-items: center;
+  gap: 10px;
+  min-height: 220px;
+  text-align: center;
+}
+
 .resultStack {
   display: grid;
   gap: 16px;
+}
+
+.aiImageGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.aiImageGrid figure {
+  margin: 0;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  overflow: hidden;
+  background: #101828;
+}
+
+.aiImageGrid img {
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: contain;
+  display: block;
+}
+
+.aiImageGrid figcaption {
+  padding: 8px 10px;
+  background: #ffffff;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 750;
 }
 
 .metricRow {
@@ -541,6 +601,51 @@ p {
   border-radius: 8px;
 }
 
+.imageLibrary {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.imageCard {
+  display: grid;
+  grid-template-columns: 160px 1fr;
+  gap: 14px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.imageCard img {
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: cover;
+  border-radius: 8px;
+  background: #101828;
+}
+
+.imageCardBody {
+  display: grid;
+  align-content: start;
+  gap: 7px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.imageCardBody strong {
+  color: var(--text);
+  font-size: 16px;
+}
+
+.imageActions {
+  grid-column: 1 / -1;
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
 table {
   width: 100%;
   border-collapse: collapse;
@@ -623,7 +728,9 @@ th {
   .moduleGrid,
   .statGrid,
   .adminLayout,
-  .adminForm {
+  .adminForm,
+  .aiImageGrid,
+  .imageLibrary {
     grid-template-columns: 1fr;
   }
 
@@ -647,5 +754,9 @@ th {
 
   .adminHero {
     display: grid;
+  }
+
+  .imageCard {
+    grid-template-columns: 110px 1fr;
   }
 }

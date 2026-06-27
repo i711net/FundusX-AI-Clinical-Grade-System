@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, Database, FileText, ImagePlus, Loader2, LogOut, Plus, RefreshCw, UploadCloud } from "lucide-react";
+import { ArrowLeft, Database, FileText, ImagePlus, Loader2, LogOut, Plus, RefreshCw, Trash2, UploadCloud } from "lucide-react";
 import { LanguageToggle } from "../components/LanguageToggle";
 import { AiReport, FundusImage, Quiz, isSupabaseConfigured, supabase } from "../lib/supabase";
 
@@ -74,10 +74,16 @@ export default function AdminPage() {
       });
       const uploadResult = await uploadResponse.json();
       if (!uploadResponse.ok) throw new Error(uploadResult.error || "R2上传失败");
+      if (!uploadResult.url) throw new Error("R2_PUBLIC_BASE_URL 未配置，无法生成图片公开访问地址。");
+
+      const imageCode =
+        String(formData.get("image_code") || "").trim() ||
+        `FUNDUS-${new Date().toISOString().slice(0, 10).replace(/-/g, "")}-${Math.random().toString(36).slice(2, 6).toUpperCase()}`;
 
       const insertResult = await supabase.from("fundus_images").insert({
         image_url: uploadResult.url,
         storage_key: uploadResult.key,
+        image_code: imageCode,
         image_type: formData.get("image_type"),
         title: formData.get("title"),
         diagnosis_label: formData.get("diagnosis_label"),
@@ -92,6 +98,42 @@ export default function AdminPage() {
       setMessage(error instanceof Error ? error.message : "上传失败");
     } finally {
       setUploading(false);
+    }
+  }
+
+  async function disableImage(image: FundusImage) {
+    if (!window.confirm(`停用这张图片？\n${image.image_code || image.title || image.id}`)) return;
+    setMessage("");
+    const { error } = await supabase.from("fundus_images").update({ is_active: false }).eq("id", image.id);
+    if (error) setMessage(error.message);
+    else {
+      setMessage("图片已停用。");
+      await loadAll();
+    }
+  }
+
+  async function deleteImage(image: FundusImage) {
+    if (!window.confirm(`彻底删除这张图片记录和R2文件？\n${image.image_code || image.title || image.id}`)) return;
+    setMessage("");
+
+    try {
+      if (image.storage_key) {
+        const response = await fetch("/api/admin/upload-r2", {
+          method: "DELETE",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ key: image.storage_key }),
+        });
+        const result = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(result.error || "R2删除失败");
+      }
+
+      const { error } = await supabase.from("fundus_images").delete().eq("id", image.id);
+      if (error) throw error;
+
+      setMessage("图片和数据库记录已删除。");
+      await loadAll();
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "删除失败");
     }
   }
 
@@ -164,6 +206,10 @@ export default function AdminPage() {
               <h2>图片管理 / Image Library</h2>
               <form action={handleImageUpload} className="adminForm">
                 <label>
+                  图片编号 / Image ID
+                  <input name="image_code" placeholder="例如：FUNDUS-001，不填则自动生成" />
+                </label>
+                <label>
                   标题 / Title
                   <input name="title" placeholder="例如：测试图像001" required />
                 </label>
@@ -196,15 +242,31 @@ export default function AdminPage() {
                 </button>
               </form>
 
-              <DataTable
-                columns={["标题 / Title", "类型 / Type", "分级 / Grade", "状态 / Status"]}
-                rows={images.map((image) => [
-                  image.title || image.id,
-                  image.image_type,
-                  image.disease_grade ?? "-",
-                  image.is_active ? "启用 / Active" : "停用 / Disabled",
-                ])}
-              />
+              <div className="imageLibrary">
+                {images.length === 0 && <p className="muted">暂无图片 / No images</p>}
+                {images.map((image) => (
+                  <article className="imageCard" key={image.id}>
+                    <img src={image.image_url} alt={image.title || image.image_code || "fundus image"} />
+                    <div className="imageCardBody">
+                      <strong>{image.image_code || "未编号 / No ID"}</strong>
+                      <span>{image.title || "未命名 / Untitled"}</span>
+                      <span>类型 / Type: {image.image_type}</span>
+                      <span>分级 / Grade: {image.disease_grade ?? "-"}</span>
+                      <span>{image.is_active ? "启用 / Active" : "停用 / Disabled"}</span>
+                    </div>
+                    <div className="imageActions">
+                      {image.is_active && (
+                        <button className="secondaryButton inlineButton" onClick={() => disableImage(image)}>
+                          停用 / Disable
+                        </button>
+                      )}
+                      <button className="dangerButton" onClick={() => deleteImage(image)}>
+                        <Trash2 size={16} /> 删除 / Delete
+                      </button>
+                    </div>
+                  </article>
+                ))}
+              </div>
             </div>
           )}
 

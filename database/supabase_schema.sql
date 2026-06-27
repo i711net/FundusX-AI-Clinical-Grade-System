@@ -4,6 +4,7 @@ create table if not exists fundus_images (
   id uuid primary key default gen_random_uuid(),
   image_url text not null,
   storage_key text,
+  image_code text unique,
   image_type text not null default 'quiz' check (image_type in ('quiz', 'upload', 'validation', 'paper')),
   title text,
   diagnosis_label text,
@@ -61,6 +62,7 @@ create table if not exists doctor_quiz_responses (
 );
 
 create index if not exists idx_fundus_images_type_active on fundus_images(image_type, is_active);
+create index if not exists idx_fundus_images_code on fundus_images(image_code);
 create index if not exists idx_quiz_items_quiz_order on quiz_items(quiz_id, item_order);
 create index if not exists idx_ai_reports_created_at on ai_reports(created_at desc);
 create index if not exists idx_doctor_quiz_responses_doctor on doctor_quiz_responses(doctor_id, created_at desc);
@@ -89,6 +91,12 @@ create policy "Public insert quiz responses" on doctor_quiz_responses
 -- Admin prototype policies. For production, replace these with authenticated admin-role policies.
 create policy "Prototype insert fundus images" on fundus_images
   for insert with check (true);
+
+create policy "Prototype update fundus images" on fundus_images
+  for update using (true) with check (true);
+
+create policy "Prototype delete fundus images" on fundus_images
+  for delete using (true);
 
 create policy "Prototype insert quizzes" on quizzes
   for insert with check (true);
