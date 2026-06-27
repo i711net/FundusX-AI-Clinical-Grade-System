@@ -14,6 +14,9 @@ create table if not exists fundus_images (
   created_at timestamp with time zone default now()
 );
 
+alter table fundus_images
+  add column if not exists image_code text;
+
 create table if not exists quizzes (
   id uuid primary key default gen_random_uuid(),
   title text not null,

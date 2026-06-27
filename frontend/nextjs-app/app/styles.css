@@ -214,6 +214,16 @@ p {
   margin: 0 auto;
 }
 
+.quizFundusImage {
+  width: min(440px, 100%);
+  aspect-ratio: 1;
+  object-fit: contain;
+  display: block;
+  margin: 0 auto 14px;
+  border-radius: 8px;
+  background: #101828;
+}
+
 .disc,
 .lesion,
 .vessel {
@@ -421,6 +431,47 @@ p {
   margin: 0;
   padding-left: 20px;
   color: var(--muted);
+}
+
+.quizReviewList {
+  display: grid;
+  gap: 12px;
+}
+
+.reviewItem {
+  display: grid;
+  grid-template-columns: 86px 1fr;
+  gap: 12px;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.reviewItem.correct {
+  border-color: rgba(6, 118, 71, 0.35);
+}
+
+.reviewItem.wrong {
+  border-color: rgba(180, 35, 24, 0.35);
+}
+
+.reviewItem img {
+  width: 86px;
+  aspect-ratio: 1;
+  object-fit: cover;
+  border-radius: 8px;
+  background: #101828;
+}
+
+.reviewItem div {
+  display: grid;
+  gap: 5px;
+}
+
+.reviewItem span {
+  color: var(--muted);
+  font-size: 13px;
 }
 
 .gradeGrid {
