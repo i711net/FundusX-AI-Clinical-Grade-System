@@ -160,6 +160,8 @@ R2_ACCESS_KEY_ID
 R2_SECRET_ACCESS_KEY
 R2_BUCKET_NAME
 R2_PUBLIC_BASE_URL
+ADMIN_PASSWORD
+ADMIN_SESSION_SECRET
 ```
 
 Set these in the Python API host if AI reports should be written to Supabase:

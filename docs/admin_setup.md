@@ -56,6 +56,9 @@ R2_ACCESS_KEY_ID=your-r2-access-key-id
 R2_SECRET_ACCESS_KEY=your-r2-secret-access-key
 R2_BUCKET_NAME=fundusx-ai
 R2_PUBLIC_BASE_URL=https://your-r2-public-domain.example.com
+
+ADMIN_PASSWORD=choose-a-strong-admin-password
+ADMIN_SESSION_SECRET=use-a-long-random-string-at-least-32-characters
 ```
 
 Only variables starting with `NEXT_PUBLIC_` are visible in the browser. R2 secret variables stay server-side inside the Next.js API route.
@@ -78,6 +81,14 @@ After deployment, open:
 ```text
 https://your-site.vercel.app/admin
 ```
+
+You will be redirected to:
+
+```text
+https://your-site.vercel.app/admin/login
+```
+
+The password is checked against `ADMIN_PASSWORD`. The login session is stored in a signed HTTP-only cookie using `ADMIN_SESSION_SECRET`.
 
 Admin functions included:
 
