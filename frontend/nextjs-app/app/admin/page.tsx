@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, BarChart3, Database, FileText, ImagePlus, Loader2, Plus, RefreshCw, UploadCloud } from "lucide-react";
+import { ArrowLeft, Database, FileText, ImagePlus, Loader2, LogOut, Plus, RefreshCw, UploadCloud } from "lucide-react";
 import { LanguageToggle } from "../components/LanguageToggle";
 import { AiReport, FundusImage, Quiz, isSupabaseConfigured, supabase } from "../lib/supabase";
 
@@ -107,11 +107,21 @@ export default function AdminPage() {
     }
   }
 
+  async function logout() {
+    await fetch("/api/admin/logout", { method: "POST" });
+    window.location.href = "/admin/login";
+  }
+
   return (
     <main className="shell compact">
       <div className="pageTools">
         <Link className="backLink" href="/"><ArrowLeft size={18} /> 首页 / Home</Link>
-        <LanguageToggle />
+        <div className="navCluster">
+          <LanguageToggle />
+          <button className="secondaryButton inlineButton" onClick={logout}>
+            <LogOut size={18} /> 退出 / Logout
+          </button>
+        </div>
       </div>
 
       <section className="adminHero">
