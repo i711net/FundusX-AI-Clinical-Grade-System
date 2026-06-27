@@ -101,7 +101,9 @@ See `datasets/download_instructions.md`.
 Classification:
 
 ```bash
-python classification_model/train.py --data-dir data/fundus --epochs 20 --num-classes 5
+python model_training/prepare_aptos_imagefolder.py --csv data/raw/aptos2019/train.csv --image-dir data/raw/aptos2019/train_images --output-dir data/fundus_dr
+python model_training/train_efficientnet_b3.py --data-dir data/fundus_dr --epochs 20 --output weights/classifier_efficientnet_b3.pth
+python model_training/upload_classifier_to_hf.py --repo-id your-hf-username/fundusx-efficientnet-b3-dr --weights weights/classifier_efficientnet_b3.pth
 ```
 
 YOLO lesion detection:

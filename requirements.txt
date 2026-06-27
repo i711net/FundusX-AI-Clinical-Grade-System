@@ -14,3 +14,5 @@ pillow
 pydantic
 sqlalchemy
 supabase
+huggingface_hub
+tqdm
