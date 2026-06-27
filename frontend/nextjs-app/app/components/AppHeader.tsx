@@ -19,6 +19,7 @@ export function AppHeader() {
           <Link href="/ai">{t.nav.ai}</Link>
           <Link href="/quiz">{t.nav.quiz}</Link>
           <Link href="/report">{t.nav.report}</Link>
+          <Link href="/admin">{t.nav.admin}</Link>
         </nav>
         <LanguageToggle />
       </div>

@@ -6,6 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
 from api_server.pipeline import full_pipeline
+from api_server.supabase_client import save_ai_report
 
 
 app = FastAPI(title="FundusX-AI API", version="1.0.0")
@@ -40,5 +41,8 @@ async def analyze(file: UploadFile = File(...)):
 
     result = full_pipeline(str(image_path))
     result["image_path"] = str(image_path.as_posix())
+    report_id = save_ai_report(result)
+    if report_id:
+        result["report_id"] = report_id
     result["disclaimer"] = "Research prototype only. Not for standalone clinical diagnosis."
     return result

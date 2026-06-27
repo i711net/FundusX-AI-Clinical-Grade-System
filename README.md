@@ -13,6 +13,7 @@ FundusX-AI is an end-to-end research and demo system for fundus image analysis. 
 - FastAPI inference service
 - Next.js web interface for upload, AI results, quiz, and report views
 - Supabase schema for storing AI reports
+- Admin dashboard for images, quizzes, reports, Supabase, and Cloudflare R2
 - Experiment scripts for metrics, ROC curves, confusion matrix, and ablation charts
 - SCI paper draft in LaTeX
 
@@ -63,6 +64,14 @@ npm run dev
 Open http://localhost:3000.
 
 The frontend calls `NEXT_PUBLIC_API_BASE_URL`, defaulting to `http://localhost:8000`.
+
+Admin dashboard:
+
+```text
+http://localhost:3000/admin
+```
+
+For Supabase and Cloudflare R2 setup, see `docs/admin_setup.md`.
 
 ## Model Weights
 
@@ -138,6 +147,27 @@ Suggested title:
 2. Upload this folder or push it using Git.
 3. Add trained model weights later through Git LFS or external release assets.
 4. Update README results after real validation.
+
+## Admin Deployment Environment
+
+Set these in Vercel:
+
+```text
+NEXT_PUBLIC_SUPABASE_URL
+NEXT_PUBLIC_SUPABASE_ANON_KEY
+R2_ACCOUNT_ID
+R2_ACCESS_KEY_ID
+R2_SECRET_ACCESS_KEY
+R2_BUCKET_NAME
+R2_PUBLIC_BASE_URL
+```
+
+Set these in the Python API host if AI reports should be written to Supabase:
+
+```text
+SUPABASE_URL
+SUPABASE_SERVICE_ROLE_KEY
+```
 
 ## License
 
