@@ -438,6 +438,36 @@ p {
   gap: 12px;
 }
 
+.scorePanel {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px;
+  border: 1px solid rgba(6, 118, 71, 0.25);
+  border-radius: 8px;
+  background: #ecfdf3;
+  color: #067647;
+}
+
+.scorePanel div {
+  display: grid;
+  gap: 3px;
+}
+
+.scorePanel span {
+  font-weight: 800;
+}
+
+.scorePanel strong {
+  color: #102033;
+  font-size: 32px;
+}
+
+.scorePanel p {
+  margin: 0;
+  color: #067647;
+}
+
 .reviewItem {
   display: grid;
   grid-template-columns: 86px 1fr;

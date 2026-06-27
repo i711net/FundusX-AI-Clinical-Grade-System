@@ -25,18 +25,24 @@ export default function QuizPage() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [selected, setSelected] = useState<number | null>(null);
   const [answers, setAnswers] = useState<Answer[]>([]);
+  const [finalAnswers, setFinalAnswers] = useState<Answer[]>([]);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
   const [finished, setFinished] = useState(false);
 
   const currentQuestion = questions[currentIndex];
-  const score = useMemo(() => answers.filter((answer) => answer.selectedGrade === answer.referenceGrade).length, [answers]);
+  const displayedAnswers = finished ? finalAnswers : answers;
+  const score = useMemo(
+    () => displayedAnswers.filter((answer) => answer.selectedGrade === answer.referenceGrade).length,
+    [displayedAnswers]
+  );
 
   async function startQuiz() {
     setLoading(true);
     setMessage("");
     setFinished(false);
     setAnswers([]);
+    setFinalAnswers([]);
     setCurrentIndex(0);
     setSelected(null);
 
@@ -91,6 +97,7 @@ export default function QuizPage() {
     });
 
     if (currentIndex + 1 >= questions.length) {
+      setFinalAnswers(nextAnswers);
       setFinished(true);
       return;
     }
@@ -100,7 +107,7 @@ export default function QuizPage() {
   }
 
   function answerFor(imageId: string) {
-    return answers.find((answer) => answer.imageId === imageId);
+    return displayedAnswers.find((answer) => answer.imageId === imageId);
   }
 
   return (
@@ -147,7 +154,14 @@ export default function QuizPage() {
 
           {finished && (
             <div className="resultStack">
-              <p className="success"><CheckCircle2 size={18} /> 成绩 / Score: {score} / {questions.length}</p>
+              <div className="scorePanel">
+                <CheckCircle2 size={26} />
+                <div>
+                  <span>考试完成 / Exam complete</span>
+                  <strong>{score} / {questions.length}</strong>
+                  <p>正确率 / Accuracy: {questions.length ? Math.round((score / questions.length) * 100) : 0}%</p>
+                </div>
+              </div>
               <div className="quizReviewList">
                 {questions.map((question, index) => {
                   const answer = answerFor(question.id);
