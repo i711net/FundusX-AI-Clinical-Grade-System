@@ -8,6 +8,7 @@ import { useLanguage } from "../i18n";
 import { FundusImage, isSupabaseConfigured, supabase } from "../lib/supabase";
 
 const QUESTION_COUNT = 10;
+const GRADES = [0, 1, 2, 3, 4];
 
 type Answer = {
   imageId: string;
@@ -17,6 +18,42 @@ type Answer = {
 
 function shuffle<T>(items: T[]) {
   return [...items].sort(() => Math.random() - 0.5);
+}
+
+async function loadBalancedQuestions() {
+  const perGrade = Math.max(1, Math.floor(QUESTION_COUNT / GRADES.length));
+  const gradeResults = await Promise.all(
+    GRADES.map(async (grade) => {
+      const { data, error } = await supabase
+        .from("fundus_images")
+        .select("*")
+        .eq("image_type", "quiz")
+        .eq("is_active", true)
+        .eq("disease_grade", grade)
+        .limit(500);
+
+      if (error) throw error;
+      return shuffle((data || []) as FundusImage[]);
+    })
+  );
+
+  const picked: FundusImage[] = [];
+  const used = new Set<string>();
+
+  for (const group of gradeResults) {
+    for (const image of group.slice(0, perGrade)) {
+      picked.push(image);
+      used.add(image.id);
+    }
+  }
+
+  const remaining = shuffle(gradeResults.flat().filter((image) => !used.has(image.id)));
+  for (const image of remaining) {
+    if (picked.length >= QUESTION_COUNT) break;
+    picked.push(image);
+  }
+
+  return shuffle(picked).slice(0, QUESTION_COUNT);
 }
 
 export default function QuizPage() {
@@ -52,20 +89,14 @@ export default function QuizPage() {
       return;
     }
 
-    const { data, error } = await supabase
-      .from("fundus_images")
-      .select("*")
-      .eq("image_type", "quiz")
-      .eq("is_active", true)
-      .not("disease_grade", "is", null);
-
-    if (error) {
-      setMessage(error.message);
+    let picked: FundusImage[] = [];
+    try {
+      picked = await loadBalancedQuestions();
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "题库加载失败 / Failed to load quiz images");
       setLoading(false);
       return;
     }
-
-    const picked = shuffle((data || []) as FundusImage[]).slice(0, QUESTION_COUNT);
     if (picked.length < QUESTION_COUNT) {
       setMessage(`题库中可用图片不足${QUESTION_COUNT}张。请先到后台上传图片并填写正确分级。`);
     }
