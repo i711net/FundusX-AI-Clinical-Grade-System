@@ -11,10 +11,12 @@ type AnalysisResult = {
   confidence: number;
   risk_level: string;
   recommendation: string;
-  lesions: Array<{ label: string; confidence: number; bbox: number[] }>;
+  lesions: Array<{ label: string; confidence: number; bbox: number[]; demo_mode?: boolean }>;
   heatmap_path?: string;
   detection_path?: string;
   demo_mode?: boolean;
+  classifier_demo_mode?: boolean;
+  lesion_demo_mode?: boolean;
   disclaimer?: string;
   image_path?: string;
   report_id?: string;
@@ -113,7 +115,10 @@ export default function AIPage() {
           )}
           {result && (
             <div className="resultStack">
-              {result.demo_mode && <div className="notice">{t.ai.demoMode}</div>}
+              {result.classifier_demo_mode && <div className="notice">{t.ai.demoMode}</div>}
+              {!result.classifier_demo_mode && result.lesion_demo_mode && (
+                <div className="notice">AI分级模型已启用；病灶检测模型未接入，当前病灶框为演示结果。</div>
+              )}
               <div className="aiImageGrid">
                 {previewUrl && (
                   <figure>
@@ -141,7 +146,10 @@ export default function AIPage() {
                 <h3>{t.ai.lesions}</h3>
                 <ul className="lesionList">
                   {result.lesions.map((lesion, index) => (
-                    <li key={`${lesion.label}-${index}`}>{lesion.label} · {lesion.confidence.toFixed(3)}</li>
+                    <li key={`${lesion.label}-${index}`}>
+                      {lesion.label} · {lesion.confidence.toFixed(3)}
+                      {lesion.demo_mode ? "（演示 / demo）" : ""}
+                    </li>
                   ))}
                 </ul>
               </div>
