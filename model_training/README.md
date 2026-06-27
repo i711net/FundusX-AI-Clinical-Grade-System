@@ -38,6 +38,26 @@ The CSV should contain:
 id_code,diagnosis
 ```
 
+If your downloaded archive is already split like this:
+
+```text
+archive/
+├── train_images/
+├── val_images/
+├── test_images/
+├── train_1.csv
+├── valid.csv
+└── test.csv
+```
+
+Use:
+
+```bash
+python model_training/prepare_existing_split_imagefolder.py ^
+  --archive-dir "E:\眼科诊断彩色图谱\archive" ^
+  --output-dir data/fundus_dr
+```
+
 ## Step 1: Prepare ImageFolder Dataset
 
 ```bash

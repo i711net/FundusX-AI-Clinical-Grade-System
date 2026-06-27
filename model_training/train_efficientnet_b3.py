@@ -1,6 +1,11 @@
 import argparse
 import json
+import sys
 from pathlib import Path
+
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
 
 import torch
 import torch.nn as nn
@@ -8,6 +13,7 @@ from sklearn.metrics import accuracy_score, classification_report, confusion_mat
 from torch.optim import AdamW
 from torchvision import datasets, transforms
 from torch.utils.data import DataLoader
+from tqdm.auto import tqdm
 
 from classification_model.model import DR_LABELS, build_model
 
@@ -44,7 +50,7 @@ def train_epoch(model, data_loader, criterion, optimizer, device):
     y_true = []
     y_pred = []
 
-    for images, labels in data_loader:
+    for images, labels in tqdm(data_loader, desc="Training", leave=False):
         images = images.to(device)
         labels = labels.to(device)
         optimizer.zero_grad()
@@ -68,7 +74,7 @@ def evaluate(model, data_loader, criterion, device):
     y_pred = []
     y_prob = []
 
-    for images, labels in data_loader:
+    for images, labels in tqdm(data_loader, desc="Evaluating", leave=False):
         images = images.to(device)
         labels = labels.to(device)
         logits = model(images)
@@ -106,6 +112,11 @@ def main():
     args = parser.parse_args()
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    print(f"Using device: {device}")
+    if device.type == "cuda":
+        print(f"GPU: {torch.cuda.get_device_name(0)}")
+    else:
+        print("CUDA is not available. Training will run on CPU and may be very slow.")
     data_dir = Path(args.data_dir)
     train_loader, train_dataset = loader(data_dir, "train", args.image_size, args.batch_size, args.workers)
     val_loader, _ = loader(data_dir, "val", args.image_size, args.batch_size, args.workers)

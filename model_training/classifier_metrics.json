@@ -1,0 +1,186 @@
+{
+  "best_val_accuracy": 0.8469945355191257,
+  "test": {
+    "loss": 0.8040902792092455,
+    "accuracy": 0.819672131147541,
+    "classification_report": {
+      "0": {
+        "precision": 0.9948979591836735,
+        "recall": 0.9798994974874372,
+        "f1-score": 0.9873417721518988,
+        "support": 199.0
+      },
+      "1": {
+        "precision": 0.4722222222222222,
+        "recall": 0.5666666666666667,
+        "f1-score": 0.5151515151515151,
+        "support": 30.0
+      },
+      "2": {
+        "precision": 0.69,
+        "recall": 0.7931034482758621,
+        "f1-score": 0.7379679144385026,
+        "support": 87.0
+      },
+      "3": {
+        "precision": 0.3125,
+        "recall": 0.29411764705882354,
+        "f1-score": 0.30303030303030304,
+        "support": 17.0
+      },
+      "4": {
+        "precision": 0.7777777777777778,
+        "recall": 0.42424242424242425,
+        "f1-score": 0.5490196078431373,
+        "support": 33.0
+      },
+      "accuracy": 0.819672131147541,
+      "macro avg": {
+        "precision": 0.6494795918367346,
+        "recall": 0.6116059367462428,
+        "f1-score": 0.6185022225230714,
+        "support": 366.0
+      },
+      "weighted avg": {
+        "precision": 0.8283074513958589,
+        "recall": 0.819672131147541,
+        "f1-score": 0.8180544504897861,
+        "support": 366.0
+      }
+    },
+    "confusion_matrix": [
+      [
+        195,
+        4,
+        0,
+        0,
+        0
+      ],
+      [
+        1,
+        17,
+        11,
+        0,
+        1
+      ],
+      [
+        0,
+        13,
+        69,
+        4,
+        1
+      ],
+      [
+        0,
+        0,
+        10,
+        5,
+        2
+      ],
+      [
+        0,
+        2,
+        10,
+        7,
+        14
+      ]
+    ],
+    "macro_auc_ovr": 0.9287577828671105
+  },
+  "history": [
+    {
+      "epoch": 1,
+      "train_loss": 0.7103200371660063,
+      "train_accuracy": 0.7392491467576792,
+      "val_loss": 0.5247862856002408,
+      "val_accuracy": 0.7923497267759563,
+      "val_macro_auc_ovr": 0.9284325413454487
+    },
+    {
+      "epoch": 2,
+      "train_loss": 0.4959462768191618,
+      "train_accuracy": 0.8088737201365188,
+      "val_loss": 0.5643554646235938,
+      "val_accuracy": 0.7950819672131147,
+      "val_macro_auc_ovr": 0.9360997458756912
+    },
+    {
+      "epoch": 3,
+      "train_loss": 0.44357098831124475,
+      "train_accuracy": 0.8348122866894198,
+      "val_loss": 0.5014994957798722,
+      "val_accuracy": 0.8333333333333334,
+      "val_macro_auc_ovr": 0.9439062070997213
+    },
+    {
+      "epoch": 4,
+      "train_loss": 0.3863888796808082,
+      "train_accuracy": 0.8464163822525598,
+      "val_loss": 0.46650345666050824,
+      "val_accuracy": 0.8333333333333334,
+      "val_macro_auc_ovr": 0.9503174160309206
+    },
+    {
+      "epoch": 5,
+      "train_loss": 0.3433564724743131,
+      "train_accuracy": 0.8686006825938567,
+      "val_loss": 0.4904225079303677,
+      "val_accuracy": 0.8333333333333334,
+      "val_macro_auc_ovr": 0.9493904264774831
+    },
+    {
+      "epoch": 6,
+      "train_loss": 0.315965379529542,
+      "train_accuracy": 0.8839590443686007,
+      "val_loss": 0.582286224473404,
+      "val_accuracy": 0.8087431693989071,
+      "val_macro_auc_ovr": 0.9454916599832821
+    },
+    {
+      "epoch": 7,
+      "train_loss": 0.27069306801619175,
+      "train_accuracy": 0.9023890784982935,
+      "val_loss": 0.5717599861650814,
+      "val_accuracy": 0.819672131147541,
+      "val_macro_auc_ovr": 0.9389588556181195
+    },
+    {
+      "epoch": 8,
+      "train_loss": 0.2519215540107778,
+      "train_accuracy": 0.904778156996587,
+      "val_loss": 0.5502528879113454,
+      "val_accuracy": 0.8333333333333334,
+      "val_macro_auc_ovr": 0.9479274785098737
+    },
+    {
+      "epoch": 9,
+      "train_loss": 0.21363159639148183,
+      "train_accuracy": 0.9204778156996587,
+      "val_loss": 0.5790817370841983,
+      "val_accuracy": 0.8142076502732241,
+      "val_macro_auc_ovr": 0.950566515085242
+    },
+    {
+      "epoch": 10,
+      "train_loss": 0.17896187684062467,
+      "train_accuracy": 0.9392491467576792,
+      "val_loss": 0.5909702934693604,
+      "val_accuracy": 0.8469945355191257,
+      "val_macro_auc_ovr": 0.9502555918889766
+    }
+  ],
+  "labels": [
+    "No diabetic retinopathy",
+    "Mild diabetic retinopathy",
+    "Moderate diabetic retinopathy",
+    "Severe diabetic retinopathy",
+    "Proliferative diabetic retinopathy"
+  ],
+  "class_to_idx": {
+    "0_no_dr": 0,
+    "1_mild": 1,
+    "2_moderate": 2,
+    "3_severe": 3,
+    "4_proliferative": 4
+  }
+}
