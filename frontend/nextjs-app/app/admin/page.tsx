@@ -42,6 +42,7 @@ export default function AdminPage() {
   const [message, setMessage] = useState("");
   const [uploading, setUploading] = useState(false);
   const [previewReport, setPreviewReport] = useState<AiReport | null>(null);
+  const [previewImage, setPreviewImage] = useState<FundusImage | null>(null);
 
   const stats = useMemo(
     () => [
@@ -544,8 +545,10 @@ export default function AdminPage() {
               <div className="imageLibrary">
                 {images.length === 0 && <p className="muted">暂无图片 / No images</p>}
                 {images.map((image) => (
-                  <article className="imageCard" key={image.id}>
-                    <img src={image.image_url} alt={image.title || image.image_code || "fundus image"} />
+                  <article className="imageCard" id={`image-${image.id}`} key={image.id}>
+                    <button className="adminImagePreviewButton" type="button" onClick={() => setPreviewImage(image)}>
+                      <img src={image.image_url} alt={image.title || image.image_code || "fundus image"} />
+                    </button>
                     <form className="imageEditForm" action={(formData) => updateImageMetadata(image, formData)}>
                       <label>
                         编号 / ID
@@ -799,6 +802,33 @@ export default function AdminPage() {
           )}
         </div>
       </section>
+      {previewImage && (
+        <div className="imageModal" role="dialog" aria-modal="true">
+          <div className="imageModalContent adminImageModal">
+            <button className="modalClose" onClick={() => setPreviewImage(null)} aria-label="关闭 / Close">
+              <X size={20} />
+            </button>
+            <img src={previewImage.image_url} alt={previewImage.title || previewImage.image_code || "fundus image"} />
+            <div className="modalInfo">
+              <strong>{previewImage.title || previewImage.image_code || "眼底图片 / Fundus image"}</strong>
+              <span>编号 / ID: {previewImage.image_code || "-"}</span>
+              <span>分级 / Grade: {previewImage.disease_grade !== null && previewImage.disease_grade !== undefined ? `${previewImage.disease_grade} - ${gradeLabels[previewImage.disease_grade]}` : "未设置 / Not set"}</span>
+              <span>诊断 / Diagnosis: {previewImage.diagnosis_label || "-"}</span>
+              <button
+                className="primaryButton reportButton"
+                onClick={() => {
+                  setPreviewImage(null);
+                  window.setTimeout(() => {
+                    document.getElementById(`image-${previewImage.id}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
+                  }, 80);
+                }}
+              >
+                编辑这张图 / Edit this image
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       {previewReport?.pdf_url && (
         <div className="imageModal" role="dialog" aria-modal="true">
           <div className="pdfModalContent">
