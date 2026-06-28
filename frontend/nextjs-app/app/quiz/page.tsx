@@ -168,7 +168,7 @@ export default function QuizPage() {
         <Link className="backLink" href="/"><ArrowLeft size={18} /> {t.nav.home}</Link>
         <LanguageToggle />
       </div>
-      <section className="workspace">
+      <section className="workspace quizWorkspace">
         <div className="quizImage">
           {loading && <Loader2 size={34} className="spin" />}
           {!loading && currentQuestion && (
@@ -180,7 +180,7 @@ export default function QuizPage() {
           )}
           {!loading && !currentQuestion && <p className="muted">{message || "暂无可用题目 / No quiz images available"}</p>}
         </div>
-        <div className="uploadPanel">
+        <div className="uploadPanel quizControlPanel">
           <h1>{t.quiz.title}</h1>
           <p>系统会从题库随机抽取10张启用图片。答题结束后显示成绩和正确答案。</p>
           {message && <div className="notice">{message}</div>}
