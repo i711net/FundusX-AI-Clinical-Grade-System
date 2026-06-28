@@ -37,6 +37,9 @@ export type AiReport = {
   lesions: Array<{ label: string; confidence: number; bbox?: number[]; demo_mode?: boolean }> | null;
   heatmap_url: string | null;
   detection_url: string | null;
+  pdf_url: string | null;
+  pdf_storage_key: string | null;
+  pdf_size_bytes: number | null;
   risk_level: string | null;
   recommendation: string | null;
   created_at: string;

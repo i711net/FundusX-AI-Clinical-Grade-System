@@ -140,14 +140,14 @@ export default function ReportPage() {
     let remainingHeight = imageHeight;
     let y = margin;
 
-    const imageData = canvas.toDataURL("image/png");
-    pdf.addImage(imageData, "PNG", margin, y, usableWidth, imageHeight);
+    const imageData = canvas.toDataURL("image/jpeg", 0.72);
+    pdf.addImage(imageData, "JPEG", margin, y, usableWidth, imageHeight);
     remainingHeight -= pageHeight - margin * 2;
 
     while (remainingHeight > 0) {
       pdf.addPage();
       y = margin - (imageHeight - remainingHeight);
-      pdf.addImage(imageData, "PNG", margin, y, usableWidth, imageHeight);
+      pdf.addImage(imageData, "JPEG", margin, y, usableWidth, imageHeight);
       remainingHeight -= pageHeight - margin * 2;
     }
 
@@ -241,17 +241,27 @@ export default function ReportPage() {
     setSavingArchive(true);
     setArchiveMessage("");
     try {
-      const response = await fetch("/api/reports", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
+      const blob = pdfBlob || await preparePdf();
+      if (!blob) throw new Error("PDF生成失败 / PDF generation failed");
+      const fileName = reportFileName(report.generatedAt);
+      const formData = new FormData();
+      formData.append("pdf", new File([blob], fileName, { type: "application/pdf" }));
+      formData.append(
+        "payload",
+        JSON.stringify({
           result: report.result,
           apiBase: report.apiBase,
-        }),
+        })
+      );
+
+      const response = await fetch("/api/reports", {
+        method: "POST",
+        body: formData,
       });
       const data = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(data.error || "保存失败 / Save failed");
-      setArchiveMessage(`已保存到后台档案 / Saved to admin archive: ${data.report?.id || ""}`);
+      const sizeKb = data.report?.pdf_size_bytes ? `，PDF ${Math.round(Number(data.report.pdf_size_bytes) / 1024)} KB` : "";
+      setArchiveMessage(`已保存PDF报告到后台档案 / Saved PDF report to archive: ${data.report?.id || ""}${sizeKb}`);
     } catch (error) {
       setArchiveMessage(error instanceof Error ? error.message : "保存失败 / Save failed");
     } finally {

@@ -45,6 +45,9 @@ create table if not exists ai_reports (
   lesions jsonb,
   heatmap_url text,
   detection_url text,
+  pdf_url text,
+  pdf_storage_key text,
+  pdf_size_bytes bigint,
   risk_level text,
   recommendation text,
   created_at timestamp with time zone default now()

@@ -3,7 +3,7 @@
 import type React from "react";
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, Database, FileText, ImagePlus, KeyRound, Loader2, LogOut, Plus, RefreshCw, Save, Trash2, UploadCloud } from "lucide-react";
+import { ArrowLeft, Database, Download, Eye, FileText, ImagePlus, KeyRound, Loader2, LogOut, Plus, RefreshCw, Save, Trash2, UploadCloud, X } from "lucide-react";
 import { LanguageToggle } from "../components/LanguageToggle";
 import { AiReport, FundusImage, Quiz, SubscriptionAccount, isSupabaseConfigured, supabase } from "../lib/supabase";
 
@@ -41,6 +41,7 @@ export default function AdminPage() {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
   const [uploading, setUploading] = useState(false);
+  const [previewReport, setPreviewReport] = useState<AiReport | null>(null);
 
   const stats = useMemo(
     () => [
@@ -357,7 +358,7 @@ export default function AdminPage() {
   }
 
   async function deleteReport(report: AiReport) {
-    const deletePassword = window.prompt(`请输入删除密码，确认删除报告：${report.diagnosis}\nEnter delete password to delete this report.`);
+    const deletePassword = window.prompt(`请输入删除密码，确认删除报告文件和记录：${report.diagnosis}\nEnter delete password to delete this report file and record.`);
     if (!deletePassword) return;
 
     const response = await fetch("/api/admin/reports", {
@@ -691,19 +692,32 @@ export default function AdminPage() {
                 </div>
               </div>
               <DataTable
-                columns={["诊断 / Diagnosis", "置信度 / Confidence", "风险 / Risk", "病灶数 / Lesions", "时间 / Created", "操作 / Action"]}
+                columns={["诊断 / Diagnosis", "置信度 / Confidence", "风险 / Risk", "病灶数 / Lesions", "PDF", "时间 / Created", "操作 / Action"]}
                 rows={reports.map((report) => [
                   report.diagnosis,
                   report.confidence?.toFixed(3) || "-",
                   report.risk_level || "-",
                   Array.isArray(report.lesions) ? report.lesions.length : 0,
+                  report.pdf_size_bytes ? `${Math.round(report.pdf_size_bytes / 1024)} KB` : "无PDF / No PDF",
                   new Date(report.created_at).toLocaleString(),
                   "删除 / Delete",
                 ])}
                 actions={reports.map((report) => (
-                  <button className="dangerButton" onClick={() => deleteReport(report)}>
-                    <Trash2 size={16} /> 删除 / Delete
-                  </button>
+                  <div className="tableActions">
+                    {report.pdf_url && (
+                      <>
+                        <button className="secondaryButton inlineButton" onClick={() => setPreviewReport(report)}>
+                          <Eye size={16} /> 预览 / Preview
+                        </button>
+                        <a className="secondaryButton inlineButton" href={report.pdf_url} target="_blank" rel="noreferrer">
+                          <Download size={16} /> 下载 / Download
+                        </a>
+                      </>
+                    )}
+                    <button className="dangerButton" onClick={() => deleteReport(report)}>
+                      <Trash2 size={16} /> 删除 / Delete
+                    </button>
+                  </div>
                 ))}
               />
             </div>
@@ -785,6 +799,22 @@ export default function AdminPage() {
           )}
         </div>
       </section>
+      {previewReport?.pdf_url && (
+        <div className="imageModal" role="dialog" aria-modal="true">
+          <div className="pdfModalContent">
+            <button className="modalClose" onClick={() => setPreviewReport(null)} aria-label="关闭 / Close">
+              <X size={20} />
+            </button>
+            <div className="pdfModalHeader">
+              <strong>{previewReport.diagnosis}</strong>
+              <a className="secondaryButton inlineButton" href={previewReport.pdf_url} target="_blank" rel="noreferrer">
+                <Download size={16} /> 下载PDF / Download PDF
+              </a>
+            </div>
+            <iframe src={previewReport.pdf_url} title="AI report PDF preview" />
+          </div>
+        </div>
+      )}
     </main>
   );
 }
