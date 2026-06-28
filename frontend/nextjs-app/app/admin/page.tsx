@@ -5,7 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { ArrowLeft, Database, FileText, ImagePlus, KeyRound, Loader2, LogOut, Plus, RefreshCw, Save, Trash2, UploadCloud } from "lucide-react";
 import { LanguageToggle } from "../components/LanguageToggle";
-import { AccessCode, AiReport, FundusImage, Quiz, isSupabaseConfigured, supabase } from "../lib/supabase";
+import { AiReport, FundusImage, Quiz, SubscriptionAccount, isSupabaseConfigured, supabase } from "../lib/supabase";
 
 type AdminTab = "images" | "quizzes" | "reports" | "access" | "settings";
 
@@ -24,8 +24,8 @@ export default function AdminPage() {
   const [images, setImages] = useState<FundusImage[]>([]);
   const [quizzes, setQuizzes] = useState<Quiz[]>([]);
   const [reports, setReports] = useState<AiReport[]>([]);
-  const [accessCodes, setAccessCodes] = useState<AccessCode[]>([]);
-  const [newAccessCode, setNewAccessCode] = useState("");
+  const [subscriptions, setSubscriptions] = useState<SubscriptionAccount[]>([]);
+  const [newSubscriptionCode, setNewSubscriptionCode] = useState("");
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
   const [uploading, setUploading] = useState(false);
@@ -35,9 +35,9 @@ export default function AdminPage() {
       { label: "眼底图片 / Images", value: images.length, icon: ImagePlus },
       { label: "考试 / Quizzes", value: quizzes.length, icon: Database },
       { label: "AI报告 / Reports", value: reports.length, icon: FileText },
-      { label: "访问码 / Access", value: accessCodes.length, icon: KeyRound },
+      { label: "订阅用户 / Users", value: subscriptions.length, icon: KeyRound },
     ],
-    [images.length, quizzes.length, reports.length, accessCodes.length]
+    [images.length, quizzes.length, reports.length, subscriptions.length]
   );
 
   async function loadAll() {
@@ -52,7 +52,7 @@ export default function AdminPage() {
       supabase.from("fundus_images").select("*").order("created_at", { ascending: false }).limit(50),
       supabase.from("quizzes").select("*").order("created_at", { ascending: false }).limit(50),
       supabase.from("ai_reports").select("*").order("created_at", { ascending: false }).limit(50),
-      fetch("/api/admin/access-codes").then((response) => response.json()),
+      fetch("/api/admin/subscriptions").then((response) => response.json()),
     ]);
 
     if (imageResult.error || quizResult.error || reportResult.error || accessResult.error) {
@@ -61,7 +61,7 @@ export default function AdminPage() {
       setImages((imageResult.data || []) as FundusImage[]);
       setQuizzes((quizResult.data || []) as Quiz[]);
       setReports((reportResult.data || []) as AiReport[]);
-      setAccessCodes((accessResult.accessCodes || []) as AccessCode[]);
+      setSubscriptions((accessResult.subscriptions || []) as SubscriptionAccount[]);
     }
     setLoading(false);
   }
@@ -178,44 +178,45 @@ export default function AdminPage() {
     }
   }
 
-  async function createAccessCode(formData: FormData) {
+  async function createSubscription(formData: FormData) {
     setMessage("");
-    setNewAccessCode("");
+    setNewSubscriptionCode("");
     const payload = {
       label: String(formData.get("label") || "月度订阅 / Monthly access"),
+      username: String(formData.get("username") || "").trim(),
       days: Number(formData.get("days") || 30),
       maxUses: String(formData.get("max_uses") || "") || null,
       code: String(formData.get("code") || ""),
     };
 
-    const response = await fetch("/api/admin/access-codes", {
+    const response = await fetch("/api/admin/subscriptions", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
     });
     const result = await response.json();
     if (!response.ok) {
-      setMessage(result.error || "创建访问码失败");
+      setMessage(result.error || "创建订阅用户失败");
       return;
     }
 
-    setNewAccessCode(result.code);
-    setMessage("访问码已创建。请复制给订阅用户；系统只显示这一次明文。");
+    setNewSubscriptionCode(result.code);
+    setMessage("订阅用户已创建。请复制访问码给用户；系统只显示这一次明文。");
     await loadAll();
   }
 
-  async function setAccessActive(code: AccessCode, isActive: boolean) {
-    const response = await fetch("/api/admin/access-codes", {
+  async function setAccessActive(code: SubscriptionAccount, isActive: boolean) {
+    const response = await fetch("/api/admin/subscriptions", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ id: code.id, isActive }),
     });
     const result = await response.json().catch(() => ({}));
     if (!response.ok) {
-      setMessage(result.error || "更新访问码失败");
+      setMessage(result.error || "更新订阅用户失败");
       return;
     }
-    setMessage(isActive ? "访问码已启用。" : "访问码已停用。");
+    setMessage(isActive ? "订阅用户已启用。" : "订阅用户已停用。");
     await loadAll();
   }
 
@@ -413,11 +414,15 @@ export default function AdminPage() {
 
           {tab === "access" && (
             <div className="adminSection">
-              <h2>订阅访问 / Subscription Access</h2>
-              <form action={createAccessCode} className="adminForm">
+              <h2>订阅用户 / Subscription Users</h2>
+              <form action={createSubscription} className="adminForm">
                 <label>
-                  名称 / Label
-                  <input name="label" placeholder="张医生-2026年7月 / Dr Zhang July" defaultValue="月度订阅 / Monthly access" />
+                  用户名 / Username
+                  <input name="username" placeholder="doctor001" required />
+                </label>
+                <label>
+                  档案名称 / Label
+                  <input name="label" placeholder="张医生-2026年7月 / Dr Zhang July" />
                 </label>
                 <label>
                   有效天数 / Valid days
@@ -428,25 +433,26 @@ export default function AdminPage() {
                   <input name="max_uses" type="number" min="1" placeholder="不填则不限 / Blank means unlimited" />
                 </label>
                 <label>
-                  自定义访问码 / Custom code
+                  自定义密码/访问码 / Custom password/code
                   <input name="code" placeholder="不填则自动生成 / Auto-generate if blank" />
                 </label>
                 <button className="primaryButton">
-                  <KeyRound size={18} /> 创建访问码 / Create
+                  <KeyRound size={18} /> 创建订阅用户 / Create
                 </button>
               </form>
-              {newAccessCode && (
+              {newSubscriptionCode && (
                 <div className="accessCodeBox">
-                  <span>新访问码 / New code</span>
-                  <strong>{newAccessCode}</strong>
-                  <button className="secondaryButton inlineButton" onClick={() => navigator.clipboard.writeText(newAccessCode)}>
+                  <span>新密码/访问码 / New password/code</span>
+                  <strong>{newSubscriptionCode}</strong>
+                  <button className="secondaryButton inlineButton" onClick={() => navigator.clipboard.writeText(newSubscriptionCode)}>
                     复制 / Copy
                   </button>
                 </div>
               )}
               <DataTable
-                columns={["名称 / Label", "到期 / Expires", "使用 / Uses", "状态 / Status", "最后使用 / Last used", "操作 / Action"]}
-                rows={accessCodes.map((code) => [
+                columns={["用户名 / Username", "档案 / Label", "到期 / Expires", "使用 / Uses", "状态 / Status", "最后使用 / Last used", "操作 / Action"]}
+                rows={subscriptions.map((code) => [
+                  code.username,
                   code.label,
                   new Date(code.expires_at).toLocaleString(),
                   `${code.use_count}${code.max_uses ? ` / ${code.max_uses}` : ""}`,
@@ -454,7 +460,7 @@ export default function AdminPage() {
                   code.last_used_at ? new Date(code.last_used_at).toLocaleString() : "-",
                   code.is_active ? "停用 / Disable" : "启用 / Enable",
                 ])}
-                actions={accessCodes.map((code) => (
+                actions={subscriptions.map((code) => (
                   <button className="secondaryButton inlineButton" onClick={() => setAccessActive(code, !code.is_active)}>
                     {code.is_active ? "停用 / Disable" : "启用 / Enable"}
                   </button>

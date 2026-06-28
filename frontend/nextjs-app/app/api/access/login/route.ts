@@ -38,15 +38,17 @@ export async function POST(request: NextRequest) {
   }
 
   const body = await request.json().catch(() => ({}));
-  const accessCode = String(body.accessCode || "").trim();
-  if (!accessCode) {
-    return NextResponse.json({ error: "请输入访问码 / Please enter an access code" }, { status: 400 });
+  const username = String(body.username || "").trim();
+  const password = String(body.password || body.accessCode || "").trim();
+  if (!username || !password) {
+    return NextResponse.json({ error: "请输入用户名和密码 / Please enter username and password" }, { status: 400 });
   }
 
-  const simplePassword = process.env.USER_ACCESS_PASSWORD;
-  if (simplePassword && accessCode === simplePassword) {
+  const adminUsername = process.env.ADMIN_USERNAME || "admin";
+  const adminPassword = process.env.ADMIN_PASSWORD;
+  if (adminPassword && username === adminUsername && password === adminPassword) {
     const exp = Date.now() + THIRTY_DAYS_MS;
-    const payloadPart = textToBase64Url(JSON.stringify({ role: "user", mode: "password", sid: randomUUID(), exp }));
+    const payloadPart = textToBase64Url(JSON.stringify({ role: "admin-user", mode: "admin", sid: randomUUID(), exp }));
     const signaturePart = await sign(payloadPart, sessionSecret);
     const response = NextResponse.json({ ok: true, expiresAt: new Date(exp).toISOString() });
     response.cookies.set(SESSION_COOKIE, `${payloadPart}.${signaturePart}`, {
@@ -64,10 +66,10 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Supabase service role is not configured" }, { status: 500 });
   }
 
-  const codeHash = hashCode(accessCode);
+  const codeHash = hashCode(`${username}:${password}`);
   const { data, error } = await supabase
-    .from("access_codes")
-    .select("id,label,expires_at,max_uses,use_count,is_active")
+    .from("subscription_accounts")
+    .select("id,username,label,expires_at,max_uses,use_count,is_active")
     .eq("code_hash", codeHash)
     .maybeSingle();
 
@@ -81,16 +83,16 @@ export async function POST(request: NextRequest) {
   const usedUp = data?.max_uses !== null && data?.max_uses !== undefined && Number(data.use_count || 0) >= Number(data.max_uses);
 
   if (!data || !data.is_active || isExpired || usedUp) {
-    return NextResponse.json({ error: "访问码无效或已过期 / Access code is invalid or expired" }, { status: 401 });
+    return NextResponse.json({ error: "用户名或密码无效，或订阅已过期 / Invalid username or password, or subscription expired" }, { status: 401 });
   }
 
   await supabase
-    .from("access_codes")
+    .from("subscription_accounts")
     .update({ use_count: Number(data.use_count || 0) + 1, last_used_at: new Date().toISOString() })
     .eq("id", data.id);
 
   const exp = Math.min(expiresAt, now + THIRTY_DAYS_MS);
-  const payloadPart = textToBase64Url(JSON.stringify({ role: "user", accessCodeId: data.id, label: data.label, exp }));
+  const payloadPart = textToBase64Url(JSON.stringify({ role: "user", accountId: data.id, username: data.username, label: data.label, exp }));
   const signaturePart = await sign(payloadPart, sessionSecret);
   const response = NextResponse.json({ ok: true, expiresAt: new Date(expiresAt).toISOString(), label: data.label });
 

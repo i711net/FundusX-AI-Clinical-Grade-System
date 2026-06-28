@@ -64,9 +64,10 @@ create table if not exists doctor_quiz_responses (
   created_at timestamp with time zone default now()
 );
 
-create table if not exists access_codes (
+create table if not exists subscription_accounts (
   id uuid primary key default gen_random_uuid(),
-  code_hash text not null unique,
+  username text not null unique,
+  code_hash text not null,
   label text not null,
   expires_at timestamp with time zone not null,
   max_uses integer,
@@ -81,14 +82,15 @@ create index if not exists idx_fundus_images_code on fundus_images(image_code);
 create index if not exists idx_quiz_items_quiz_order on quiz_items(quiz_id, item_order);
 create index if not exists idx_ai_reports_created_at on ai_reports(created_at desc);
 create index if not exists idx_doctor_quiz_responses_doctor on doctor_quiz_responses(doctor_id, created_at desc);
-create index if not exists idx_access_codes_active_expires on access_codes(is_active, expires_at desc);
+create index if not exists idx_subscription_accounts_active_expires on subscription_accounts(is_active, expires_at desc);
+create index if not exists idx_subscription_accounts_username on subscription_accounts(username);
 
 alter table fundus_images enable row level security;
 alter table quizzes enable row level security;
 alter table quiz_items enable row level security;
 alter table ai_reports enable row level security;
 alter table doctor_quiz_responses enable row level security;
-alter table access_codes enable row level security;
+alter table subscription_accounts enable row level security;
 
 create policy "Public read active fundus images" on fundus_images
   for select using (is_active = true);

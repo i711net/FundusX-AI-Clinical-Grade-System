@@ -38,8 +38,9 @@ export type AiReport = {
   created_at: string;
 };
 
-export type AccessCode = {
+export type SubscriptionAccount = {
   id: string;
+  username: string;
   label: string;
   expires_at: string;
   max_uses: number | null;

@@ -33,7 +33,8 @@ function LoginShell() {
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [accessCode, setAccessCode] = useState("");
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -45,7 +46,7 @@ function LoginForm() {
     const response = await fetch("/api/access/login", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ accessCode }),
+      body: JSON.stringify({ username, password }),
     });
 
     const result = await response.json().catch(() => ({}));
@@ -69,14 +70,23 @@ function LoginForm() {
       <section className="loginPanel">
         <LockKeyhole size={34} />
         <h1>用户登录 / User Login</h1>
-        <p>请输入访问码。订阅到期后访问码会自动失效。</p>
+        <p>请输入用户名和密码。订阅到期后账号会自动失效。</p>
         <form onSubmit={login} className="loginForm">
           <label>
-            访问码 / Access code
+            用户名 / Username
+            <input
+              value={username}
+              onChange={(event) => setUsername(event.target.value)}
+              placeholder="doctor001"
+              required
+            />
+          </label>
+          <label>
+            密码或访问码 / Password or access code
             <input
               type="password"
-              value={accessCode}
-              onChange={(event) => setAccessCode(event.target.value)}
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
               placeholder="FX-XXXXXXXX-XXXXXX"
               required
             />

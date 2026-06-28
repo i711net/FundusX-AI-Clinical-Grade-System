@@ -27,6 +27,7 @@ async function sign(payloadPart: string, secret: string) {
 
 export async function POST(request: NextRequest) {
   const configuredPassword = process.env.ADMIN_PASSWORD;
+  const configuredUsername = process.env.ADMIN_USERNAME || "admin";
   const sessionSecret = process.env.ADMIN_SESSION_SECRET;
 
   if (!configuredPassword || !sessionSecret) {
@@ -34,9 +35,10 @@ export async function POST(request: NextRequest) {
   }
 
   const body = await request.json().catch(() => ({}));
+  const username = String(body.username || "");
   const password = String(body.password || "");
 
-  if (password !== configuredPassword) {
+  if (username !== configuredUsername || password !== configuredPassword) {
     return NextResponse.json({ error: "Invalid password" }, { status: 401 });
   }
 

@@ -33,6 +33,7 @@ function LoginShell() {
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -45,7 +46,7 @@ function LoginForm() {
     const response = await fetch("/api/admin/login", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ password }),
+      body: JSON.stringify({ username, password }),
     });
 
     const result = await response.json().catch(() => ({}));
@@ -71,6 +72,15 @@ function LoginForm() {
         <h1>后台登录 / Admin Login</h1>
         <p>请输入管理员密码。密码保存在 Vercel 环境变量中，不会写在前端代码里。</p>
         <form onSubmit={login} className="loginForm">
+          <label>
+            管理员用户名 / Admin username
+            <input
+              value={username}
+              onChange={(event) => setUsername(event.target.value)}
+              placeholder="admin"
+              required
+            />
+          </label>
           <label>
             管理员密码 / Admin password
             <input
