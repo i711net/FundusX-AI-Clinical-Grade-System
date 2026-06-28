@@ -75,7 +75,11 @@ export async function proxy(request: NextRequest) {
     request.cookies.get(USER_SESSION_COOKIE)?.value,
     process.env.ACCESS_SESSION_SECRET || process.env.ADMIN_SESSION_SECRET
   );
-  if (isUserAuthenticated) return NextResponse.next();
+  const isAdminAuthenticatedForUserPage = await verifySession(
+    request.cookies.get(ADMIN_SESSION_COOKIE)?.value,
+    process.env.ADMIN_SESSION_SECRET
+  );
+  if (isUserAuthenticated || isAdminAuthenticatedForUserPage) return NextResponse.next();
 
   const userLoginUrl = request.nextUrl.clone();
   userLoginUrl.pathname = "/login";

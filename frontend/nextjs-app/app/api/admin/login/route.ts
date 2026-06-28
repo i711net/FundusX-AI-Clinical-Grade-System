@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 
 export const runtime = "nodejs";
 
-const SESSION_COOKIE = "fundusx_admin_session";
+const ADMIN_SESSION_COOKIE = "fundusx_admin_session";
+const USER_SESSION_COOKIE = "fundusx_user_session";
 const ONE_DAY_MS = 24 * 60 * 60 * 1000;
 
 function bytesToBase64Url(bytes: Uint8Array) {
@@ -46,7 +47,18 @@ export async function POST(request: NextRequest) {
   const signaturePart = await sign(payloadPart, sessionSecret);
   const response = NextResponse.json({ ok: true });
 
-  response.cookies.set(SESSION_COOKIE, `${payloadPart}.${signaturePart}`, {
+  response.cookies.set(ADMIN_SESSION_COOKIE, `${payloadPart}.${signaturePart}`, {
+    httpOnly: true,
+    sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",
+    path: "/",
+    maxAge: 24 * 60 * 60,
+  });
+
+  const userSessionSecret = process.env.ACCESS_SESSION_SECRET || sessionSecret;
+  const userPayloadPart = textToBase64Url(JSON.stringify({ role: "admin-user", mode: "admin", exp: Date.now() + ONE_DAY_MS }));
+  const userSignaturePart = await sign(userPayloadPart, userSessionSecret);
+  response.cookies.set(USER_SESSION_COOKIE, `${userPayloadPart}.${userSignaturePart}`, {
     httpOnly: true,
     sameSite: "lax",
     secure: process.env.NODE_ENV === "production",

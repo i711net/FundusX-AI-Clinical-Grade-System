@@ -4,7 +4,8 @@ import { createServerSupabase } from "../../../lib/serverSupabase";
 
 export const runtime = "nodejs";
 
-const SESSION_COOKIE = "fundusx_user_session";
+const USER_SESSION_COOKIE = "fundusx_user_session";
+const ADMIN_SESSION_COOKIE = "fundusx_admin_session";
 const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
 
 function bytesToBase64Url(bytes: Uint8Array) {
@@ -51,13 +52,26 @@ export async function POST(request: NextRequest) {
     const payloadPart = textToBase64Url(JSON.stringify({ role: "admin-user", mode: "admin", sid: randomUUID(), exp }));
     const signaturePart = await sign(payloadPart, sessionSecret);
     const response = NextResponse.json({ ok: true, expiresAt: new Date(exp).toISOString() });
-    response.cookies.set(SESSION_COOKIE, `${payloadPart}.${signaturePart}`, {
+    response.cookies.set(USER_SESSION_COOKIE, `${payloadPart}.${signaturePart}`, {
       httpOnly: true,
       sameSite: "lax",
       secure: process.env.NODE_ENV === "production",
       path: "/",
       maxAge: Math.floor((exp - Date.now()) / 1000),
     });
+
+    const adminSecret = process.env.ADMIN_SESSION_SECRET;
+    if (adminSecret) {
+      const adminPayloadPart = textToBase64Url(JSON.stringify({ role: "admin", exp }));
+      const adminSignaturePart = await sign(adminPayloadPart, adminSecret);
+      response.cookies.set(ADMIN_SESSION_COOKIE, `${adminPayloadPart}.${adminSignaturePart}`, {
+        httpOnly: true,
+        sameSite: "lax",
+        secure: process.env.NODE_ENV === "production",
+        path: "/",
+        maxAge: Math.floor((exp - Date.now()) / 1000),
+      });
+    }
     return response;
   }
 
@@ -96,7 +110,7 @@ export async function POST(request: NextRequest) {
   const signaturePart = await sign(payloadPart, sessionSecret);
   const response = NextResponse.json({ ok: true, expiresAt: new Date(expiresAt).toISOString(), label: data.label });
 
-  response.cookies.set(SESSION_COOKIE, `${payloadPart}.${signaturePart}`, {
+  response.cookies.set(USER_SESSION_COOKIE, `${payloadPart}.${signaturePart}`, {
     httpOnly: true,
     sameSite: "lax",
     secure: process.env.NODE_ENV === "production",
