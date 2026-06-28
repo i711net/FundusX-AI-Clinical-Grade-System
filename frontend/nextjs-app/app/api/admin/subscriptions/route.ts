@@ -77,3 +77,22 @@ export async function PATCH(request: NextRequest) {
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json({ ok: true });
 }
+
+export async function DELETE(request: NextRequest) {
+  const supabase = createServerSupabase();
+  if (!supabase) return NextResponse.json({ error: "Supabase service role is not configured" }, { status: 500 });
+
+  const body = await request.json().catch(() => ({}));
+  const id = String(body.id || "");
+  const deletePassword = String(body.deletePassword || "");
+  const configuredDeletePassword = process.env.ADMIN_DELETE_PASSWORD || process.env.ADMIN_PASSWORD;
+
+  if (!id) return NextResponse.json({ error: "Missing id" }, { status: 400 });
+  if (!configuredDeletePassword || deletePassword !== configuredDeletePassword) {
+    return NextResponse.json({ error: "删除密码错误 / Invalid delete password" }, { status: 403 });
+  }
+
+  const { error } = await supabase.from("subscription_accounts").delete().eq("id", id);
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  return NextResponse.json({ ok: true });
+}

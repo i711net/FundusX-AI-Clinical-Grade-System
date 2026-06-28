@@ -23,6 +23,7 @@ Required:
 ADMIN_PASSWORD=your-admin-password
 ADMIN_USERNAME=admin
 ADMIN_SESSION_SECRET=long-random-admin-secret
+ADMIN_DELETE_PASSWORD=optional-delete-password
 ACCESS_SESSION_SECRET=long-random-user-secret
 SUPABASE_SERVICE_ROLE_KEY=your-supabase-service-role-key
 NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co

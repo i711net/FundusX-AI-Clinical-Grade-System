@@ -220,6 +220,24 @@ export default function AdminPage() {
     await loadAll();
   }
 
+  async function deleteSubscription(code: SubscriptionAccount) {
+    const deletePassword = window.prompt(`请输入删除密码，确认删除订阅用户：${code.username}\nEnter delete password to delete this user.`);
+    if (!deletePassword) return;
+
+    const response = await fetch("/api/admin/subscriptions", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: code.id, deletePassword }),
+    });
+    const result = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      setMessage(result.error || "删除订阅用户失败");
+      return;
+    }
+    setMessage("订阅用户已删除。");
+    await loadAll();
+  }
+
   async function logout() {
     await fetch("/api/admin/logout", { method: "POST" });
     window.location.href = "/admin/login";
@@ -462,9 +480,14 @@ export default function AdminPage() {
                   code.is_active ? "停用 / Disable" : "启用 / Enable",
                 ])}
                 actions={subscriptions.map((code) => (
-                  <button className="secondaryButton inlineButton" onClick={() => setAccessActive(code, !code.is_active)}>
-                    {code.is_active ? "停用 / Disable" : "启用 / Enable"}
-                  </button>
+                  <div className="tableActions">
+                    <button className="secondaryButton inlineButton" onClick={() => setAccessActive(code, !code.is_active)}>
+                      {code.is_active ? "停用 / Disable" : "启用 / Enable"}
+                    </button>
+                    <button className="dangerButton" onClick={() => deleteSubscription(code)}>
+                      <Trash2 size={16} /> 删除 / Delete
+                    </button>
+                  </div>
                 ))}
               />
             </div>
