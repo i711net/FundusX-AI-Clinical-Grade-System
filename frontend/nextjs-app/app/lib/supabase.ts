@@ -37,3 +37,14 @@ export type AiReport = {
   recommendation: string | null;
   created_at: string;
 };
+
+export type AccessCode = {
+  id: string;
+  label: string;
+  expires_at: string;
+  max_uses: number | null;
+  use_count: number;
+  is_active: boolean;
+  last_used_at: string | null;
+  created_at: string;
+};

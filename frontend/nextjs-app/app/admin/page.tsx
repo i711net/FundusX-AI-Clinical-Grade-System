@@ -1,17 +1,19 @@
 "use client";
 
+import type React from "react";
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, Database, FileText, ImagePlus, Loader2, LogOut, Plus, RefreshCw, Save, Trash2, UploadCloud } from "lucide-react";
+import { ArrowLeft, Database, FileText, ImagePlus, KeyRound, Loader2, LogOut, Plus, RefreshCw, Save, Trash2, UploadCloud } from "lucide-react";
 import { LanguageToggle } from "../components/LanguageToggle";
-import { AiReport, FundusImage, Quiz, isSupabaseConfigured, supabase } from "../lib/supabase";
+import { AccessCode, AiReport, FundusImage, Quiz, isSupabaseConfigured, supabase } from "../lib/supabase";
 
-type AdminTab = "images" | "quizzes" | "reports" | "settings";
+type AdminTab = "images" | "quizzes" | "reports" | "access" | "settings";
 
 const tabs: Array<{ id: AdminTab; zh: string; en: string }> = [
   { id: "images", zh: "图片管理", en: "Images" },
   { id: "quizzes", zh: "考试管理", en: "Quizzes" },
   { id: "reports", zh: "报告浏览", en: "Reports" },
+  { id: "access", zh: "订阅访问", en: "Access" },
   { id: "settings", zh: "连接设置", en: "Settings" },
 ];
 
@@ -22,6 +24,8 @@ export default function AdminPage() {
   const [images, setImages] = useState<FundusImage[]>([]);
   const [quizzes, setQuizzes] = useState<Quiz[]>([]);
   const [reports, setReports] = useState<AiReport[]>([]);
+  const [accessCodes, setAccessCodes] = useState<AccessCode[]>([]);
+  const [newAccessCode, setNewAccessCode] = useState("");
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
   const [uploading, setUploading] = useState(false);
@@ -31,8 +35,9 @@ export default function AdminPage() {
       { label: "眼底图片 / Images", value: images.length, icon: ImagePlus },
       { label: "考试 / Quizzes", value: quizzes.length, icon: Database },
       { label: "AI报告 / Reports", value: reports.length, icon: FileText },
+      { label: "访问码 / Access", value: accessCodes.length, icon: KeyRound },
     ],
-    [images.length, quizzes.length, reports.length]
+    [images.length, quizzes.length, reports.length, accessCodes.length]
   );
 
   async function loadAll() {
@@ -43,18 +48,20 @@ export default function AdminPage() {
 
     setLoading(true);
     setMessage("");
-    const [imageResult, quizResult, reportResult] = await Promise.all([
+    const [imageResult, quizResult, reportResult, accessResult] = await Promise.all([
       supabase.from("fundus_images").select("*").order("created_at", { ascending: false }).limit(50),
       supabase.from("quizzes").select("*").order("created_at", { ascending: false }).limit(50),
       supabase.from("ai_reports").select("*").order("created_at", { ascending: false }).limit(50),
+      fetch("/api/admin/access-codes").then((response) => response.json()),
     ]);
 
-    if (imageResult.error || quizResult.error || reportResult.error) {
-      setMessage(imageResult.error?.message || quizResult.error?.message || reportResult.error?.message || "加载失败");
+    if (imageResult.error || quizResult.error || reportResult.error || accessResult.error) {
+      setMessage(imageResult.error?.message || quizResult.error?.message || reportResult.error?.message || accessResult.error || "加载失败");
     } else {
       setImages((imageResult.data || []) as FundusImage[]);
       setQuizzes((quizResult.data || []) as Quiz[]);
       setReports((reportResult.data || []) as AiReport[]);
+      setAccessCodes((accessResult.accessCodes || []) as AccessCode[]);
     }
     setLoading(false);
   }
@@ -169,6 +176,47 @@ export default function AdminPage() {
       setMessage("考试已创建。后续可在 quiz_items 表中绑定100张图片。");
       await loadAll();
     }
+  }
+
+  async function createAccessCode(formData: FormData) {
+    setMessage("");
+    setNewAccessCode("");
+    const payload = {
+      label: String(formData.get("label") || "月度订阅 / Monthly access"),
+      days: Number(formData.get("days") || 30),
+      maxUses: String(formData.get("max_uses") || "") || null,
+      code: String(formData.get("code") || ""),
+    };
+
+    const response = await fetch("/api/admin/access-codes", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    const result = await response.json();
+    if (!response.ok) {
+      setMessage(result.error || "创建访问码失败");
+      return;
+    }
+
+    setNewAccessCode(result.code);
+    setMessage("访问码已创建。请复制给订阅用户；系统只显示这一次明文。");
+    await loadAll();
+  }
+
+  async function setAccessActive(code: AccessCode, isActive: boolean) {
+    const response = await fetch("/api/admin/access-codes", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: code.id, isActive }),
+    });
+    const result = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      setMessage(result.error || "更新访问码失败");
+      return;
+    }
+    setMessage(isActive ? "访问码已启用。" : "访问码已停用。");
+    await loadAll();
   }
 
   async function logout() {
@@ -363,6 +411,58 @@ export default function AdminPage() {
             </div>
           )}
 
+          {tab === "access" && (
+            <div className="adminSection">
+              <h2>订阅访问 / Subscription Access</h2>
+              <form action={createAccessCode} className="adminForm">
+                <label>
+                  名称 / Label
+                  <input name="label" placeholder="张医生-2026年7月 / Dr Zhang July" defaultValue="月度订阅 / Monthly access" />
+                </label>
+                <label>
+                  有效天数 / Valid days
+                  <input name="days" type="number" min="1" defaultValue="30" />
+                </label>
+                <label>
+                  最大登录次数 / Max logins
+                  <input name="max_uses" type="number" min="1" placeholder="不填则不限 / Blank means unlimited" />
+                </label>
+                <label>
+                  自定义访问码 / Custom code
+                  <input name="code" placeholder="不填则自动生成 / Auto-generate if blank" />
+                </label>
+                <button className="primaryButton">
+                  <KeyRound size={18} /> 创建访问码 / Create
+                </button>
+              </form>
+              {newAccessCode && (
+                <div className="accessCodeBox">
+                  <span>新访问码 / New code</span>
+                  <strong>{newAccessCode}</strong>
+                  <button className="secondaryButton inlineButton" onClick={() => navigator.clipboard.writeText(newAccessCode)}>
+                    复制 / Copy
+                  </button>
+                </div>
+              )}
+              <DataTable
+                columns={["名称 / Label", "到期 / Expires", "使用 / Uses", "状态 / Status", "最后使用 / Last used", "操作 / Action"]}
+                rows={accessCodes.map((code) => [
+                  code.label,
+                  new Date(code.expires_at).toLocaleString(),
+                  `${code.use_count}${code.max_uses ? ` / ${code.max_uses}` : ""}`,
+                  code.is_active ? "启用 / Active" : "停用 / Disabled",
+                  code.last_used_at ? new Date(code.last_used_at).toLocaleString() : "-",
+                  code.is_active ? "停用 / Disable" : "启用 / Enable",
+                ])}
+                actions={accessCodes.map((code) => (
+                  <button className="secondaryButton inlineButton" onClick={() => setAccessActive(code, !code.is_active)}>
+                    {code.is_active ? "停用 / Disable" : "启用 / Enable"}
+                  </button>
+                ))}
+              />
+            </div>
+          )}
+
           {tab === "settings" && (
             <div className="adminSection">
               <h2>连接设置 / Connection Settings</h2>
@@ -380,7 +480,7 @@ export default function AdminPage() {
   );
 }
 
-function DataTable({ columns, rows }: { columns: string[]; rows: Array<Array<string | number>> }) {
+function DataTable({ columns, rows, actions }: { columns: string[]; rows: Array<Array<string | number>>; actions?: React.ReactNode[] }) {
   return (
     <div className="tableWrap">
       <table>
@@ -395,7 +495,9 @@ function DataTable({ columns, rows }: { columns: string[]; rows: Array<Array<str
           )}
           {rows.map((row, rowIndex) => (
             <tr key={rowIndex}>
-              {row.map((cell, cellIndex) => <td key={`${rowIndex}-${cellIndex}`}>{cell}</td>)}
+              {row.map((cell, cellIndex) => (
+                <td key={`${rowIndex}-${cellIndex}`}>{actions && cellIndex === row.length - 1 ? actions[rowIndex] : cell}</td>
+              ))}
             </tr>
           ))}
         </tbody>

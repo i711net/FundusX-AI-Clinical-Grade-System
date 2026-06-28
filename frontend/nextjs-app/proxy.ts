@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
-const SESSION_COOKIE = "fundusx_admin_session";
+const ADMIN_SESSION_COOKIE = "fundusx_admin_session";
+const USER_SESSION_COOKIE = "fundusx_user_session";
 
 function base64UrlToBytes(value: string) {
   const base64 = value.replace(/-/g, "+").replace(/_/g, "/");
@@ -8,9 +9,8 @@ function base64UrlToBytes(value: string) {
   return Uint8Array.from(atob(padded), (char) => char.charCodeAt(0));
 }
 
-async function verifySession(token: string | undefined) {
+async function verifySession(token: string | undefined, secret: string | undefined) {
   if (!token) return false;
-  const secret = process.env.ADMIN_SESSION_SECRET;
   if (!secret) return false;
 
   const [payloadPart, signaturePart] = token.split(".");
@@ -41,26 +41,48 @@ export async function proxy(request: NextRequest) {
   const isAdminPage = pathname.startsWith("/admin");
   const isAdminApi = pathname.startsWith("/api/admin");
   const isLoginRoute = pathname === "/admin/login" || pathname === "/api/admin/login";
+  const isPublicRoute =
+    pathname === "/login" ||
+    pathname === "/api/access/login" ||
+    pathname.startsWith("/_next") ||
+    pathname === "/favicon.ico";
 
-  if ((!isAdminPage && !isAdminApi) || isLoginRoute) {
+  if (isLoginRoute) {
     return NextResponse.next();
   }
 
-  const isAuthenticated = await verifySession(request.cookies.get(SESSION_COOKIE)?.value);
-  if (isAuthenticated) {
+  if (isAdminPage || isAdminApi) {
+    const isAdminAuthenticated = await verifySession(request.cookies.get(ADMIN_SESSION_COOKIE)?.value, process.env.ADMIN_SESSION_SECRET);
+    if (isAdminAuthenticated) {
+      return NextResponse.next();
+    }
+
+    if (isAdminApi) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const loginUrl = request.nextUrl.clone();
+    loginUrl.pathname = "/admin/login";
+    loginUrl.searchParams.set("next", pathname);
+    return NextResponse.redirect(loginUrl);
+  }
+
+  if (isPublicRoute || pathname.startsWith("/api/")) {
     return NextResponse.next();
   }
 
-  if (isAdminApi) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const isUserAuthenticated = await verifySession(
+    request.cookies.get(USER_SESSION_COOKIE)?.value,
+    process.env.ACCESS_SESSION_SECRET || process.env.ADMIN_SESSION_SECRET
+  );
+  if (isUserAuthenticated) return NextResponse.next();
 
-  const loginUrl = request.nextUrl.clone();
-  loginUrl.pathname = "/admin/login";
-  loginUrl.searchParams.set("next", pathname);
-  return NextResponse.redirect(loginUrl);
+  const userLoginUrl = request.nextUrl.clone();
+  userLoginUrl.pathname = "/login";
+  userLoginUrl.searchParams.set("next", pathname);
+  return NextResponse.redirect(userLoginUrl);
 }
 
 export const config = {
-  matcher: ["/admin/:path*", "/api/admin/:path*"],
+  matcher: ["/((?!.*\\..*).*)"],
 };

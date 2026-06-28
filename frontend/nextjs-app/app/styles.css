@@ -109,6 +109,14 @@ nav {
   color: #ffffff;
 }
 
+.headerLogout {
+  width: 36px;
+  min-height: 36px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+}
+
 .hero {
   min-height: 520px;
   display: grid;
@@ -972,6 +980,26 @@ th {
   gap: 10px;
   color: var(--muted);
   line-height: 1.6;
+}
+
+.accessCodeBox {
+  display: grid;
+  gap: 8px;
+  margin: 0 0 18px;
+  padding: 14px;
+  border: 1px solid rgba(6, 118, 71, 0.25);
+  border-radius: 8px;
+  background: #ecfdf3;
+}
+
+.accessCodeBox span {
+  color: #067647;
+  font-weight: 750;
+}
+
+.accessCodeBox strong {
+  font-size: 20px;
+  word-break: break-all;
 }
 
 .loginPanel {

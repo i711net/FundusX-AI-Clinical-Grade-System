@@ -1,12 +1,17 @@
 "use client";
 
 import Link from "next/link";
-import { Activity } from "lucide-react";
+import { Activity, LogOut } from "lucide-react";
 import { useLanguage } from "../i18n";
 import { LanguageToggle } from "./LanguageToggle";
 
 export function AppHeader() {
   const { t } = useLanguage();
+
+  async function logout() {
+    await fetch("/api/access/logout", { method: "POST" });
+    window.location.href = "/login";
+  }
 
   return (
     <header className="topbar">
@@ -22,6 +27,9 @@ export function AppHeader() {
           <Link href="/admin">{t.nav.admin}</Link>
         </nav>
         <LanguageToggle />
+        <button className="secondaryButton headerLogout" onClick={logout} title="Logout">
+          <LogOut size={16} />
+        </button>
       </div>
     </header>
   );
