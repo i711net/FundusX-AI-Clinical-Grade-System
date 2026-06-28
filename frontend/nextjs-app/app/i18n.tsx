@@ -252,3 +252,19 @@ export function translateMedicalText(text: string | undefined, language: Languag
   const medical = translations[language].medical as Record<string, string>;
   return medical[text] || text;
 }
+
+const lesionNames: Record<string, { zh: string; en: string }> = {
+  microaneurysm: { zh: "微动脉瘤", en: "microaneurysm" },
+  hemorrhage: { zh: "出血", en: "hemorrhage" },
+  hard_exudate: { zh: "硬性渗出", en: "hard exudate" },
+  soft_exudate: { zh: "软性渗出", en: "soft exudate" },
+  demo_exudate: { zh: "演示渗出", en: "demo exudate" },
+};
+
+export function translateLesionLabel(label: string | undefined, language: Language) {
+  if (!label) return "";
+  const normalized = label.trim().toLowerCase();
+  const translated = lesionNames[normalized];
+  if (!translated) return label;
+  return language === "zh" ? `${translated.zh} / ${translated.en}` : `${translated.en} / ${translated.zh}`;
+}

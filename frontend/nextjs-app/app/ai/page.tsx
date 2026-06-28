@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { ArrowLeft, Image as ImageIcon, UploadCloud } from "lucide-react";
 import { LanguageToggle } from "../components/LanguageToggle";
-import { translateMedicalText, useLanguage } from "../i18n";
+import { translateLesionLabel, translateMedicalText, useLanguage } from "../i18n";
 
 type AnalysisResult = {
   diagnosis: string;
@@ -147,7 +147,7 @@ export default function AIPage() {
                 <ul className="lesionList">
                   {result.lesions.map((lesion, index) => (
                     <li key={`${lesion.label}-${index}`}>
-                      {lesion.label} · {lesion.confidence.toFixed(3)}
+                      {translateLesionLabel(lesion.label, language)} · {lesion.confidence.toFixed(3)}
                       {lesion.demo_mode ? "（演示 / demo）" : ""}
                     </li>
                   ))}
