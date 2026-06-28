@@ -16,3 +16,4 @@ sqlalchemy
 supabase
 huggingface_hub
 tqdm
+boto3

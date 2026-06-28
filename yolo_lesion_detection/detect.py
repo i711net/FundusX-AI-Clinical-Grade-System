@@ -1,8 +1,10 @@
 from pathlib import Path
+import os
 from typing import Any
 
 
-LESION_LABELS = ["microaneurysm", "hemorrhage", "exudate", "neovascularization"]
+LESION_LABELS = ["microaneurysm", "hemorrhage", "hard_exudate", "soft_exudate"]
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
 
 
 def detect_lesions(image_path: str, weights: str | None = None) -> list[dict[str, Any]]:
@@ -15,6 +17,9 @@ def detect_lesions(image_path: str, weights: str | None = None) -> list[dict[str
                 "demo_mode": True,
             }
         ]
+
+    os.environ.setdefault("YOLO_CONFIG_DIR", str(PROJECT_ROOT / ".cache" / "ultralytics"))
+    os.environ.setdefault("MPLCONFIGDIR", str(PROJECT_ROOT / ".cache" / "matplotlib"))
 
     from ultralytics import YOLO
 

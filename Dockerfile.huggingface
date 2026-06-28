@@ -1,0 +1,32 @@
+FROM python:3.12-slim
+
+RUN useradd -m -u 1000 user
+
+ENV HOME=/home/user \
+    PATH=/home/user/.local/bin:$PATH \
+    PORT=7860 \
+    FUNDUSX_CLASSIFIER_WEIGHTS=/tmp/fundusx/weights/classifier_efficientnet_b3.pth \
+    FUNDUSX_YOLO_WEIGHTS=/tmp/fundusx/weights/yolo_lesion_detector.pt \
+    FUNDUSX_RUNTIME_DIR=/tmp/fundusx \
+    FUNDUSX_UPLOAD_DIR=/tmp/fundusx/uploads \
+    FUNDUSX_FIGURE_DIR=/tmp/fundusx/figures
+
+WORKDIR $HOME/app
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libgl1 \
+    libglib2.0-0 \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY --chown=user requirements.txt .
+
+USER user
+
+RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir -r requirements.txt
+
+COPY --chown=user . .
+
+EXPOSE 7860
+
+CMD ["python", "api_server/start_hf_space.py"]

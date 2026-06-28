@@ -68,6 +68,7 @@ def model_status():
         "lesion_detector": {
             "path": str(yolo_weights.as_posix()),
             "exists": yolo_weights.exists(),
+            "hf_yolo_filename": os.getenv("HF_YOLO_FILENAME", ""),
             "note": "YOLO detector is optional. Missing YOLO weights only affects lesion boxes, not DR classification.",
         },
         "runtime": {
