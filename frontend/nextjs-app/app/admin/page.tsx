@@ -26,19 +26,51 @@ export default function AdminPage() {
   const [reports, setReports] = useState<AiReport[]>([]);
   const [subscriptions, setSubscriptions] = useState<SubscriptionAccount[]>([]);
   const [newSubscriptionCode, setNewSubscriptionCode] = useState("");
+  const [imageTotal, setImageTotal] = useState(0);
+  const [imagePage, setImagePage] = useState(0);
+  const [imagePageSize, setImagePageSize] = useState(50);
+  const [imageSearch, setImageSearch] = useState("");
+  const [imageTypeFilter, setImageTypeFilter] = useState("");
+  const [imageGradeFilter, setImageGradeFilter] = useState("");
+  const [imageStatusFilter, setImageStatusFilter] = useState("");
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
   const [uploading, setUploading] = useState(false);
 
   const stats = useMemo(
     () => [
-      { label: "眼底图片 / Images", value: images.length, icon: ImagePlus },
+      { label: "眼底图片 / Images", value: imageTotal || images.length, icon: ImagePlus },
       { label: "考试 / Quizzes", value: quizzes.length, icon: Database },
       { label: "AI报告 / Reports", value: reports.length, icon: FileText },
       { label: "订阅用户 / Users", value: subscriptions.length, icon: KeyRound },
     ],
-    [images.length, quizzes.length, reports.length, subscriptions.length]
+    [imageTotal, images.length, quizzes.length, reports.length, subscriptions.length]
   );
+
+  async function loadImages(page = imagePage) {
+    const from = page * imagePageSize;
+    const to = from + imagePageSize - 1;
+    let query = supabase
+      .from("fundus_images")
+      .select("*", { count: "exact" })
+      .order("created_at", { ascending: false })
+      .range(from, to);
+
+    const search = imageSearch.trim();
+    if (search) {
+      const safeSearch = search.replace(/[%(),]/g, "");
+      query = query.or(`image_code.ilike.%${safeSearch}%,title.ilike.%${safeSearch}%,diagnosis_label.ilike.%${safeSearch}%`);
+    }
+    if (imageTypeFilter) query = query.eq("image_type", imageTypeFilter);
+    if (imageGradeFilter !== "") query = query.eq("disease_grade", Number(imageGradeFilter));
+    if (imageStatusFilter === "active") query = query.eq("is_active", true);
+    if (imageStatusFilter === "inactive") query = query.eq("is_active", false);
+
+    const { data, error, count } = await query;
+    if (error) throw error;
+    setImages((data || []) as FundusImage[]);
+    setImageTotal(count || 0);
+  }
 
   async function loadAll() {
     if (!isSupabaseConfigured) {
@@ -48,22 +80,55 @@ export default function AdminPage() {
 
     setLoading(true);
     setMessage("");
-    const [imageResult, quizResult, reportResult, accessResult] = await Promise.all([
-      supabase.from("fundus_images").select("*").order("created_at", { ascending: false }).limit(50),
+    try {
+      await loadImages();
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "图片加载失败");
+      setLoading(false);
+      return;
+    }
+    const [quizResult, reportResult, accessResult] = await Promise.all([
       supabase.from("quizzes").select("*").order("created_at", { ascending: false }).limit(50),
       supabase.from("ai_reports").select("*").order("created_at", { ascending: false }).limit(50),
       fetch("/api/admin/subscriptions").then((response) => response.json()),
     ]);
 
-    if (imageResult.error || quizResult.error || reportResult.error || accessResult.error) {
-      setMessage(imageResult.error?.message || quizResult.error?.message || reportResult.error?.message || accessResult.error || "加载失败");
+    if (quizResult.error || reportResult.error || accessResult.error) {
+      setMessage(quizResult.error?.message || reportResult.error?.message || accessResult.error || "加载失败");
     } else {
-      setImages((imageResult.data || []) as FundusImage[]);
       setQuizzes((quizResult.data || []) as Quiz[]);
       setReports((reportResult.data || []) as AiReport[]);
       setSubscriptions((accessResult.subscriptions || []) as SubscriptionAccount[]);
     }
     setLoading(false);
+  }
+
+  async function applyImageFilters() {
+    setImagePage(0);
+    setLoading(true);
+    setMessage("");
+    try {
+      await loadImages(0);
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "图片加载失败");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function goToImagePage(nextPage: number) {
+    if (nextPage < 0) return;
+    if (nextPage * imagePageSize >= imageTotal && imageTotal > 0) return;
+    setImagePage(nextPage);
+    setLoading(true);
+    setMessage("");
+    try {
+      await loadImages(nextPage);
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "图片加载失败");
+    } finally {
+      setLoading(false);
+    }
   }
 
   useEffect(() => {
@@ -100,7 +165,8 @@ export default function AdminPage() {
 
       if (insertResult.error) throw insertResult.error;
       setMessage("图片已上传到 R2，并写入 Supabase。");
-      await loadAll();
+      await loadImages(0);
+      setImagePage(0);
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "上传失败");
     } finally {
@@ -115,7 +181,7 @@ export default function AdminPage() {
     if (error) setMessage(error.message);
     else {
       setMessage("图片已停用。");
-      await loadAll();
+      await loadImages();
     }
   }
 
@@ -138,7 +204,7 @@ export default function AdminPage() {
       if (error) throw error;
 
       setMessage("图片和数据库记录已删除。");
-      await loadAll();
+      await loadImages();
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "删除失败");
     }
@@ -163,7 +229,7 @@ export default function AdminPage() {
     }
 
     setMessage("图片信息已保存。");
-    await loadAll();
+    await loadImages();
   }
 
   async function createQuiz(formData: FormData) {
@@ -243,6 +309,10 @@ export default function AdminPage() {
     window.location.href = "/admin/login";
   }
 
+  const imageTotalPages = Math.max(1, Math.ceil(imageTotal / imagePageSize));
+  const imageFrom = imageTotal === 0 ? 0 : imagePage * imagePageSize + 1;
+  const imageTo = Math.min((imagePage + 1) * imagePageSize, imageTotal);
+
   return (
     <main className="shell compact">
       <div className="pageTools">
@@ -293,6 +363,56 @@ export default function AdminPage() {
           {tab === "images" && (
             <div className="adminSection">
               <h2>图片管理 / Image Library</h2>
+              <div className="imageToolbar">
+                <label>
+                  搜索 / Search
+                  <input
+                    value={imageSearch}
+                    onChange={(event) => setImageSearch(event.target.value)}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter") applyImageFilters();
+                    }}
+                    placeholder="编号、标题、诊断标签 / ID, title, diagnosis"
+                  />
+                </label>
+                <label>
+                  类型 / Type
+                  <select value={imageTypeFilter} onChange={(event) => setImageTypeFilter(event.target.value)}>
+                    <option value="">全部类型 / All types</option>
+                    <option value="quiz">考试图片 / Quiz</option>
+                    <option value="upload">用户上传 / Upload</option>
+                    <option value="validation">验证集 / Validation</option>
+                    <option value="paper">论文图 / Paper</option>
+                  </select>
+                </label>
+                <label>
+                  分级 / Grade
+                  <select value={imageGradeFilter} onChange={(event) => setImageGradeFilter(event.target.value)}>
+                    <option value="">全部分级 / All grades</option>
+                    {gradeLabels.map((grade, index) => <option value={index} key={grade}>{index} - {grade}</option>)}
+                  </select>
+                </label>
+                <label>
+                  状态 / Status
+                  <select value={imageStatusFilter} onChange={(event) => setImageStatusFilter(event.target.value)}>
+                    <option value="">全部状态 / All status</option>
+                    <option value="active">启用 / Active</option>
+                    <option value="inactive">停用 / Disabled</option>
+                  </select>
+                </label>
+                <label>
+                  每页 / Page size
+                  <select value={imagePageSize} onChange={(event) => setImagePageSize(Number(event.target.value))}>
+                    <option value={25}>25</option>
+                    <option value={50}>50</option>
+                    <option value={100}>100</option>
+                    <option value={200}>200</option>
+                  </select>
+                </label>
+                <button className="secondaryButton inlineButton" onClick={applyImageFilters} disabled={loading}>
+                  {loading ? <Loader2 size={16} className="spin" /> : <RefreshCw size={16} />} 搜索 / Apply
+                </button>
+              </div>
               <form action={handleImageUpload} className="adminForm">
                 <label>
                   图片编号 / Image ID
@@ -330,6 +450,22 @@ export default function AdminPage() {
                   {uploading ? <Loader2 size={18} className="spin" /> : <UploadCloud size={18} />} 上传到R2 / Upload
                 </button>
               </form>
+
+              <div className="paginationBar">
+                <span>
+                  共 {imageTotal} 张 / Total {imageTotal}
+                  {imageTotal > 0 ? `，当前 ${imageFrom}-${imageTo} / Showing ${imageFrom}-${imageTo}` : ""}
+                </span>
+                <div>
+                  <button className="secondaryButton inlineButton" onClick={() => goToImagePage(imagePage - 1)} disabled={loading || imagePage === 0}>
+                    上一页 / Previous
+                  </button>
+                  <strong>{imagePage + 1} / {imageTotalPages}</strong>
+                  <button className="secondaryButton inlineButton" onClick={() => goToImagePage(imagePage + 1)} disabled={loading || imagePage + 1 >= imageTotalPages}>
+                    下一页 / Next
+                  </button>
+                </div>
+              </div>
 
               <div className="imageLibrary">
                 {images.length === 0 && <p className="muted">暂无图片 / No images</p>}
@@ -388,6 +524,18 @@ export default function AdminPage() {
                     </div>
                   </article>
                 ))}
+              </div>
+
+              <div className="paginationBar bottom">
+                <span>第 {imagePage + 1} 页 / Page {imagePage + 1}</span>
+                <div>
+                  <button className="secondaryButton inlineButton" onClick={() => goToImagePage(imagePage - 1)} disabled={loading || imagePage === 0}>
+                    上一页 / Previous
+                  </button>
+                  <button className="secondaryButton inlineButton" onClick={() => goToImagePage(imagePage + 1)} disabled={loading || imagePage + 1 >= imageTotalPages}>
+                    下一页 / Next
+                  </button>
+                </div>
               </div>
             </div>
           )}

@@ -903,6 +903,63 @@ p {
   margin-top: 22px;
 }
 
+.imageToolbar {
+  display: grid;
+  grid-template-columns: 1.5fr repeat(4, minmax(120px, 1fr)) auto;
+  gap: 12px;
+  align-items: end;
+  margin-bottom: 18px;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #f8fafc;
+}
+
+.imageToolbar label {
+  display: grid;
+  gap: 6px;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.imageToolbar input,
+.imageToolbar select {
+  width: 100%;
+  min-height: 40px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 8px 10px;
+  background: #ffffff;
+  color: var(--text);
+}
+
+.paginationBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 12px 0 16px;
+  color: var(--muted);
+  font-size: 14px;
+  font-weight: 750;
+}
+
+.paginationBar.bottom {
+  margin: 16px 0 0;
+}
+
+.paginationBar > div {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.paginationBar strong {
+  color: var(--text);
+}
+
 .tableWrap {
   overflow-x: auto;
   border: 1px solid var(--line);
@@ -1079,6 +1136,7 @@ th {
   .statGrid,
   .adminLayout,
   .adminForm,
+  .imageToolbar,
   .aiImageGrid,
   .reportImageGrid,
   .imageLibrary {
@@ -1210,5 +1268,18 @@ th {
 
   .imageEditForm {
     grid-template-columns: 1fr;
+  }
+
+  .paginationBar {
+    display: grid;
+  }
+
+  .paginationBar > div {
+    justify-content: space-between;
+  }
+
+  .paginationBar .inlineButton {
+    flex: 1;
+    min-width: 128px;
   }
 }
