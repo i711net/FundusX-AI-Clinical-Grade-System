@@ -45,6 +45,43 @@ function readFileAsDataUrl(file: File) {
   });
 }
 
+function loadImageFromFile(file: File) {
+  return new Promise<HTMLImageElement>((resolve, reject) => {
+    const url = URL.createObjectURL(file);
+    const image = new Image();
+    image.onload = () => {
+      URL.revokeObjectURL(url);
+      resolve(image);
+    };
+    image.onerror = () => {
+      URL.revokeObjectURL(url);
+      reject(new Error("图片读取失败。请改用 JPG/PNG，或把 iPhone 相机格式设为“兼容性最佳”。"));
+    };
+    image.src = url;
+  });
+}
+
+async function compressImageForAnalysis(file: File) {
+  if (file.type === "image/gif" || file.type === "image/svg+xml") return file;
+
+  const image = await loadImageFromFile(file);
+  const maxSide = 1600;
+  const scale = Math.min(1, maxSide / Math.max(image.naturalWidth, image.naturalHeight));
+  const width = Math.max(1, Math.round(image.naturalWidth * scale));
+  const height = Math.max(1, Math.round(image.naturalHeight * scale));
+  const canvas = document.createElement("canvas");
+  canvas.width = width;
+  canvas.height = height;
+  const context = canvas.getContext("2d");
+  if (!context) return file;
+
+  context.drawImage(image, 0, 0, width, height);
+  const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/jpeg", 0.86));
+  if (!blob) return file;
+  const originalName = file.name.replace(/\.[^.]+$/, "") || "fundus";
+  return new File([blob], `${originalName}-compressed.jpg`, { type: "image/jpeg" });
+}
+
 export default function AIPage() {
   const { language, t } = useLanguage();
   const [file, setFile] = useState<File | null>(null);
@@ -52,6 +89,7 @@ export default function AIPage() {
   const [result, setResult] = useState<AnalysisResult | null>(null);
   const [previewImage, setPreviewImage] = useState<PreviewImage | null>(null);
   const [loading, setLoading] = useState(false);
+  const [uploadHint, setUploadHint] = useState("");
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -73,21 +111,26 @@ export default function AIPage() {
     if (!file) return;
     setLoading(true);
     setError("");
+    setUploadHint("");
     setResult(null);
-    const formData = new FormData();
-    formData.append("file", file);
 
     try {
+      const uploadFile = await compressImageForAnalysis(file);
+      if (uploadFile.size !== file.size) {
+        setUploadHint(`已自动压缩上传 / Compressed for upload: ${Math.round(file.size / 1024)} KB → ${Math.round(uploadFile.size / 1024)} KB`);
+      }
+      const formData = new FormData();
+      formData.append("file", uploadFile);
       const response = await fetch(`${apiBase}/analyze`, { method: "POST", body: formData });
       if (!response.ok) throw new Error(t.ai.requestFailed);
       const analysis = (await response.json()) as AnalysisResult;
-      const originalImage = await readFileAsDataUrl(file);
+      const originalImage = await readFileAsDataUrl(uploadFile);
       window.localStorage.setItem(
         "fundusx-latest-ai-report",
         JSON.stringify({
           result: analysis,
           originalImage,
-          fileName: file.name,
+          fileName: uploadFile.name,
           generatedAt: new Date().toISOString(),
           apiBase,
         })
@@ -123,6 +166,7 @@ export default function AIPage() {
               onChange={(event) => {
                 setFile(event.target.files?.[0] || null);
                 setResult(null);
+                setUploadHint("");
                 setError("");
               }}
             />
@@ -130,6 +174,7 @@ export default function AIPage() {
           <button className="primaryButton" onClick={analyze} disabled={!file || loading}>
             {loading ? t.ai.analyzing : t.ai.run}
           </button>
+          {uploadHint && <p className="success">{uploadHint}</p>}
           {error && <p className="error">{error}</p>}
         </div>
 
