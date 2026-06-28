@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Activity, LogOut } from "lucide-react";
 import { useLanguage } from "../i18n";
 import { LanguageToggle } from "./LanguageToggle";
+import { AccessBadge } from "./AccessBadge";
 
 export function AppHeader() {
   const { t } = useLanguage();
@@ -26,6 +27,7 @@ export function AppHeader() {
           <Link href="/report">{t.nav.report}</Link>
           <Link href="/admin">{t.nav.admin}</Link>
         </nav>
+        <AccessBadge />
         <LanguageToggle />
         <button className="secondaryButton headerLogout" onClick={logout} title="Logout">
           <LogOut size={16} />

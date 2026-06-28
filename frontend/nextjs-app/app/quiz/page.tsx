@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { ArrowLeft, CheckCircle2, ChevronLeft, ChevronRight, Loader2, RotateCcw, X } from "lucide-react";
+import { AccessBadge } from "../components/AccessBadge";
 import { LanguageToggle } from "../components/LanguageToggle";
 import { useLanguage } from "../i18n";
 import { FundusImage, isSupabaseConfigured, supabase } from "../lib/supabase";
@@ -166,7 +167,7 @@ export default function QuizPage() {
     <main className="shell compact">
       <div className="pageTools">
         <Link className="backLink" href="/"><ArrowLeft size={18} /> {t.nav.home}</Link>
-        <LanguageToggle />
+        <div className="navCluster"><AccessBadge /><LanguageToggle /></div>
       </div>
       <section className="workspace quizWorkspace">
         <div className="quizImage">

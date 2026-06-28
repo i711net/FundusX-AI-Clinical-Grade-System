@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ArrowLeft, Download, FileText, Printer, Share2 } from "lucide-react";
+import { AccessBadge } from "../components/AccessBadge";
 import { LanguageToggle } from "../components/LanguageToggle";
 import { translateLesionLabel, translateMedicalText, useLanguage } from "../i18n";
 
@@ -237,7 +238,7 @@ export default function ReportPage() {
     <main className="shell compact">
       <div className="pageTools">
         <Link className="backLink" href="/"><ArrowLeft size={18} /> {t.nav.home}</Link>
-        <LanguageToggle />
+        <div className="navCluster"><AccessBadge /><LanguageToggle /></div>
       </div>
       <section className="report" ref={reportRef}>
         <div className="reportHeader">

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { ArrowLeft, Image as ImageIcon, UploadCloud, X } from "lucide-react";
+import { AccessBadge } from "../components/AccessBadge";
 import { LanguageToggle } from "../components/LanguageToggle";
 import { translateLesionLabel, translateMedicalText, useLanguage } from "../i18n";
 
@@ -103,7 +104,7 @@ export default function AIPage() {
     <main className="shell compact">
       <div className="pageTools">
         <Link className="backLink" href="/"><ArrowLeft size={18} /> {t.nav.home}</Link>
-        <LanguageToggle />
+        <div className="navCluster"><AccessBadge /><LanguageToggle /></div>
       </div>
       <section className="workspace">
         <div className="uploadPanel">
