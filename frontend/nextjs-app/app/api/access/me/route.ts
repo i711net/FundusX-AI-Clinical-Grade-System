@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { createServerSupabase } from "../../../lib/serverSupabase";
 
 export const runtime = "nodejs";
 
@@ -36,6 +37,8 @@ async function verifySession(token: string | undefined, secret: string | undefin
     role?: string;
     username?: string;
     label?: string;
+    accountId?: string;
+    sessionId?: string;
     exp?: number;
   };
   if (!payload.exp || payload.exp <= Date.now()) return null;
@@ -48,6 +51,19 @@ export async function GET(request: NextRequest) {
     process.env.ACCESS_SESSION_SECRET || process.env.ADMIN_SESSION_SECRET
   );
   if (userPayload) {
+    if (!userPayload.role?.includes("admin") && userPayload.accountId && userPayload.sessionId) {
+      const supabase = createServerSupabase();
+      if (supabase) {
+        const { data } = await supabase
+          .from("subscription_accounts")
+          .select("active_session_id,is_active,expires_at,active_session_started_at")
+          .eq("id", userPayload.accountId)
+          .maybeSingle();
+        if (!data || !data.is_active || new Date(data.expires_at).getTime() <= Date.now() || data.active_session_id !== userPayload.sessionId) {
+          return NextResponse.json({ authenticated: false, reason: "session_replaced" }, { status: 401 });
+        }
+      }
+    }
     return NextResponse.json({
       authenticated: true,
       role: userPayload.role || "user",

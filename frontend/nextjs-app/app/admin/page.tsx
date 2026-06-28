@@ -450,13 +450,14 @@ export default function AdminPage() {
                 </div>
               )}
               <DataTable
-                columns={["用户名 / Username", "档案 / Label", "到期 / Expires", "使用 / Uses", "状态 / Status", "最后使用 / Last used", "操作 / Action"]}
+                columns={["用户名 / Username", "档案 / Label", "到期 / Expires", "使用 / Uses", "状态 / Status", "当前会话 / Active session", "最后使用 / Last used", "操作 / Action"]}
                 rows={subscriptions.map((code) => [
                   code.username,
                   code.label,
                   new Date(code.expires_at).toLocaleString(),
                   `${code.use_count}${code.max_uses ? ` / ${code.max_uses}` : ""}`,
                   code.is_active ? "启用 / Active" : "停用 / Disabled",
+                  code.active_session_started_at ? new Date(code.active_session_started_at).toLocaleString() : "-",
                   code.last_used_at ? new Date(code.last_used_at).toLocaleString() : "-",
                   code.is_active ? "停用 / Disable" : "启用 / Enable",
                 ])}

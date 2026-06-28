@@ -18,7 +18,7 @@ export async function GET() {
 
   const { data, error } = await supabase
     .from("subscription_accounts")
-    .select("id,username,label,expires_at,max_uses,use_count,is_active,last_used_at,created_at")
+    .select("id,username,label,expires_at,max_uses,use_count,is_active,active_session_id,active_session_started_at,last_used_at,created_at")
     .order("created_at", { ascending: false })
     .limit(100);
 
@@ -54,7 +54,7 @@ export async function POST(request: NextRequest) {
       },
       { onConflict: "username" }
     )
-    .select("id,username,label,expires_at,max_uses,use_count,is_active,last_used_at,created_at")
+    .select("id,username,label,expires_at,max_uses,use_count,is_active,active_session_id,active_session_started_at,last_used_at,created_at")
     .single();
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });

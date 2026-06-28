@@ -46,6 +46,8 @@ export type SubscriptionAccount = {
   max_uses: number | null;
   use_count: number;
   is_active: boolean;
+  active_session_id: string | null;
+  active_session_started_at: string | null;
   last_used_at: string | null;
   created_at: string;
 };

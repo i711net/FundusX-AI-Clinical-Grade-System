@@ -73,9 +73,14 @@ create table if not exists subscription_accounts (
   max_uses integer,
   use_count integer not null default 0,
   is_active boolean not null default true,
+  active_session_id text,
+  active_session_started_at timestamp with time zone,
   last_used_at timestamp with time zone,
   created_at timestamp with time zone default now()
 );
+
+alter table subscription_accounts add column if not exists active_session_id text;
+alter table subscription_accounts add column if not exists active_session_started_at timestamp with time zone;
 
 create index if not exists idx_fundus_images_type_active on fundus_images(image_type, is_active);
 create index if not exists idx_fundus_images_code on fundus_images(image_code);

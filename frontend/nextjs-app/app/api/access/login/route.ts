@@ -100,13 +100,19 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "用户名或密码无效，或订阅已过期 / Invalid username or password, or subscription expired" }, { status: 401 });
   }
 
+  const sessionId = randomUUID();
   await supabase
     .from("subscription_accounts")
-    .update({ use_count: Number(data.use_count || 0) + 1, last_used_at: new Date().toISOString() })
+    .update({
+      use_count: Number(data.use_count || 0) + 1,
+      last_used_at: new Date().toISOString(),
+      active_session_id: sessionId,
+      active_session_started_at: new Date().toISOString(),
+    })
     .eq("id", data.id);
 
   const exp = Math.min(expiresAt, now + THIRTY_DAYS_MS);
-  const payloadPart = textToBase64Url(JSON.stringify({ role: "user", accountId: data.id, username: data.username, label: data.label, exp }));
+  const payloadPart = textToBase64Url(JSON.stringify({ role: "user", accountId: data.id, sessionId, username: data.username, label: data.label, exp }));
   const signaturePart = await sign(payloadPart, sessionSecret);
   const response = NextResponse.json({ ok: true, expiresAt: new Date(expiresAt).toISOString(), label: data.label });
 
