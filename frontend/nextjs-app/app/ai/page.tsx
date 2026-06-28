@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import { ArrowLeft, Image as ImageIcon, UploadCloud } from "lucide-react";
+import { ArrowLeft, Image as ImageIcon, UploadCloud, X } from "lucide-react";
 import { LanguageToggle } from "../components/LanguageToggle";
 import { translateLesionLabel, translateMedicalText, useLanguage } from "../i18n";
 
@@ -24,6 +24,11 @@ type AnalysisResult = {
 
 const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
 
+type PreviewImage = {
+  src: string;
+  title: string;
+};
+
 function backendAssetUrl(path: string | undefined) {
   if (!path) return "";
   if (path.startsWith("http")) return path;
@@ -35,12 +40,14 @@ export default function AIPage() {
   const [file, setFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState("");
   const [result, setResult] = useState<AnalysisResult | null>(null);
+  const [previewImage, setPreviewImage] = useState<PreviewImage | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
   useEffect(() => {
     if (!file) {
       setPreviewUrl("");
+      setPreviewImage(null);
       return;
     }
 
@@ -110,32 +117,51 @@ export default function AIPage() {
             <div className="emptyResult">
               <ImageIcon size={30} />
               <p className="muted">{t.ai.waiting}</p>
-              <p className="muted">如果点击后没有结果，请检查 Vercel 环境变量 NEXT_PUBLIC_API_BASE_URL 是否指向正在运行的 Python API。</p>
+              <p className="muted">{t.ai.apiHint}</p>
             </div>
           )}
           {result && (
             <div className="resultStack">
               {result.classifier_demo_mode && <div className="notice">{t.ai.demoMode}</div>}
               {!result.classifier_demo_mode && result.lesion_demo_mode && (
-                <div className="notice">AI分级模型已启用；病灶检测模型未接入，当前病灶框为演示结果。</div>
+                <div className="notice">{t.ai.lesionDemoMode}</div>
               )}
+              <p className="muted imageHint">{t.ai.imageZoomHint}</p>
               <div className="aiImageGrid">
                 {previewUrl && (
                   <figure>
-                    <img src={previewUrl} alt="uploaded fundus" />
-                    <figcaption>原图 / Original</figcaption>
+                    <button
+                      className="imagePreviewButton"
+                      type="button"
+                      onClick={() => setPreviewImage({ src: previewUrl, title: `${t.ai.originalImage} / Original` })}
+                    >
+                      <img src={previewUrl} alt="uploaded fundus" />
+                    </button>
+                    <figcaption>{t.ai.originalImage} / Original</figcaption>
                   </figure>
                 )}
                 {heatmapUrl && (
                   <figure>
-                    <img src={heatmapUrl} alt="Grad-CAM heatmap" />
-                    <figcaption>热力图 / Grad-CAM</figcaption>
+                    <button
+                      className="imagePreviewButton"
+                      type="button"
+                      onClick={() => setPreviewImage({ src: heatmapUrl, title: `${t.ai.gradcamImage} / Grad-CAM` })}
+                    >
+                      <img src={heatmapUrl} alt="Grad-CAM heatmap" />
+                    </button>
+                    <figcaption>{t.ai.gradcamImage} / Grad-CAM</figcaption>
                   </figure>
                 )}
                 {detectionUrl && (
                   <figure>
-                    <img src={detectionUrl} alt="lesion detection" />
-                    <figcaption>病灶检测 / Lesion detection</figcaption>
+                    <button
+                      className="imagePreviewButton"
+                      type="button"
+                      onClick={() => setPreviewImage({ src: detectionUrl, title: `${t.ai.lesionDetectionImage} / Lesion detection` })}
+                    >
+                      <img src={detectionUrl} alt="lesion detection" />
+                    </button>
+                    <figcaption>{t.ai.lesionDetectionImage} / Lesion detection</figcaption>
                   </figure>
                 )}
               </div>
@@ -163,6 +189,20 @@ export default function AIPage() {
           )}
         </div>
       </section>
+      {previewImage && (
+        <div className="imageModal" role="dialog" aria-modal="true">
+          <div className="imageModalContent aiPreviewModal">
+            <button className="modalClose" onClick={() => setPreviewImage(null)} aria-label={t.ai.closePreview}>
+              <X size={20} />
+            </button>
+            <img src={previewImage.src} alt={previewImage.title} />
+            <div className="modalInfo">
+              <strong>{previewImage.title}</strong>
+              <span>{t.ai.imageZoomHint}</span>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 }

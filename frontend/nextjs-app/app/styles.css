@@ -385,6 +385,15 @@ p {
   background: #101828;
 }
 
+.imagePreviewButton {
+  width: 100%;
+  display: block;
+  padding: 0;
+  border: 0;
+  background: #101828;
+  cursor: zoom-in;
+}
+
 .aiImageGrid img {
   width: 100%;
   aspect-ratio: 1;
@@ -415,6 +424,11 @@ p {
   background: #fff7ed;
   color: #9a3412;
   font-weight: 700;
+}
+
+.imageHint {
+  margin: -4px 0 0;
+  font-size: 14px;
 }
 
 .error {
@@ -533,6 +547,14 @@ p {
   object-fit: contain;
   background: #101828;
   border-radius: 8px;
+}
+
+.aiPreviewModal {
+  width: min(1080px, 100%);
+}
+
+.aiPreviewModal img {
+  max-height: 78vh;
 }
 
 .modalClose {
