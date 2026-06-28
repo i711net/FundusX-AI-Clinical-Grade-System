@@ -108,6 +108,8 @@ export const translations = {
       print: "Print",
       downloadPdf: "Download PDF",
       downloadingPdf: "Generating PDF...",
+      sharePdf: "Share PDF",
+      sharingPdf: "Preparing share...",
     },
     medical: {
       "No diabetic retinopathy": "No diabetic retinopathy",
@@ -225,6 +227,8 @@ export const translations = {
       print: "打印",
       downloadPdf: "下载PDF",
       downloadingPdf: "正在生成PDF...",
+      sharePdf: "分享PDF",
+      sharingPdf: "正在准备分享...",
     },
     medical: {
       "No diabetic retinopathy": "无糖尿病视网膜病变",

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ArrowLeft, Download, FileText, Printer } from "lucide-react";
+import { ArrowLeft, Download, FileText, Printer, Share2 } from "lucide-react";
 import { LanguageToggle } from "../components/LanguageToggle";
 import { translateLesionLabel, translateMedicalText, useLanguage } from "../i18n";
 
@@ -25,6 +25,19 @@ type StoredReport = {
   generatedAt?: string;
   apiBase?: string;
 };
+
+type SaveFilePickerWindow = Window &
+  typeof globalThis & {
+    showSaveFilePicker?: (options: {
+      suggestedName?: string;
+      types?: Array<{ description: string; accept: Record<string, string[]> }>;
+    }) => Promise<{
+      createWritable: () => Promise<{
+        write: (data: Blob) => Promise<void>;
+        close: () => Promise<void>;
+      }>;
+    }>;
+  };
 
 function assetUrl(path: string | undefined, apiBase: string | undefined) {
   if (!path) return "";
@@ -51,6 +64,7 @@ export default function ReportPage() {
   const { language, t } = useLanguage();
   const [report, setReport] = useState<StoredReport | null>(null);
   const [downloading, setDownloading] = useState(false);
+  const [sharing, setSharing] = useState(false);
   const reportRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
@@ -72,44 +86,95 @@ export default function ReportPage() {
     [report]
   );
 
-  async function downloadPdf() {
-    if (!reportRef.current || !report) return;
-    setDownloading(true);
-    try {
-      const [{ default: html2canvas }, { jsPDF }] = await Promise.all([
-        import("html2canvas"),
-        import("jspdf"),
-      ]);
-      await document.fonts?.ready;
-      const canvas = await html2canvas(reportRef.current, {
-        backgroundColor: "#ffffff",
-        scale: Math.min(2, window.devicePixelRatio || 1),
-        useCORS: true,
-        ignoreElements: (element) => element.hasAttribute("data-html2canvas-ignore"),
-      });
-      const pdf = new jsPDF("p", "mm", "a4");
-      const pageWidth = pdf.internal.pageSize.getWidth();
-      const pageHeight = pdf.internal.pageSize.getHeight();
-      const margin = 8;
-      const usableWidth = pageWidth - margin * 2;
-      const imageHeight = (canvas.height * usableWidth) / canvas.width;
-      let remainingHeight = imageHeight;
-      let y = margin;
+  async function createPdfBlob() {
+    if (!reportRef.current || !report) return null;
+    const [{ default: html2canvas }, { jsPDF }] = await Promise.all([
+      import("html2canvas"),
+      import("jspdf"),
+    ]);
+    await document.fonts?.ready;
+    const canvas = await html2canvas(reportRef.current, {
+      backgroundColor: "#ffffff",
+      scale: Math.min(2, window.devicePixelRatio || 1),
+      useCORS: true,
+      ignoreElements: (element) => element.hasAttribute("data-html2canvas-ignore"),
+    });
+    const pdf = new jsPDF("p", "mm", "a4");
+    const pageWidth = pdf.internal.pageSize.getWidth();
+    const pageHeight = pdf.internal.pageSize.getHeight();
+    const margin = 8;
+    const usableWidth = pageWidth - margin * 2;
+    const imageHeight = (canvas.height * usableWidth) / canvas.width;
+    let remainingHeight = imageHeight;
+    let y = margin;
 
-      const imageData = canvas.toDataURL("image/png");
+    const imageData = canvas.toDataURL("image/png");
+    pdf.addImage(imageData, "PNG", margin, y, usableWidth, imageHeight);
+    remainingHeight -= pageHeight - margin * 2;
+
+    while (remainingHeight > 0) {
+      pdf.addPage();
+      y = margin - (imageHeight - remainingHeight);
       pdf.addImage(imageData, "PNG", margin, y, usableWidth, imageHeight);
       remainingHeight -= pageHeight - margin * 2;
+    }
 
-      while (remainingHeight > 0) {
-        pdf.addPage();
-        y = margin - (imageHeight - remainingHeight);
-        pdf.addImage(imageData, "PNG", margin, y, usableWidth, imageHeight);
-        remainingHeight -= pageHeight - margin * 2;
-      }
+    return pdf.output("blob");
+  }
 
-      pdf.save(reportFileName(report.generatedAt));
+  async function saveBlob(blob: Blob, fileName: string) {
+    const picker = (window as SaveFilePickerWindow).showSaveFilePicker;
+    if (picker) {
+      const handle = await picker({
+        suggestedName: fileName,
+        types: [{ description: "PDF", accept: { "application/pdf": [".pdf"] } }],
+      });
+      const writable = await handle.createWritable();
+      await writable.write(blob);
+      await writable.close();
+      return;
+    }
+
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = fileName;
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+    URL.revokeObjectURL(url);
+  }
+
+  async function downloadPdf() {
+    if (!report) return;
+    setDownloading(true);
+    try {
+      const blob = await createPdfBlob();
+      if (blob) await saveBlob(blob, reportFileName(report.generatedAt));
     } finally {
       setDownloading(false);
+    }
+  }
+
+  async function sharePdf() {
+    if (!report) return;
+    setSharing(true);
+    try {
+      const blob = await createPdfBlob();
+      if (!blob) return;
+      const fileName = reportFileName(report.generatedAt);
+      const file = new File([blob], fileName, { type: "application/pdf" });
+      if (navigator.canShare?.({ files: [file] })) {
+        await navigator.share({
+          title: t.report.title,
+          text: t.report.sourceValue,
+          files: [file],
+        });
+      } else {
+        await saveBlob(blob, fileName);
+      }
+    } finally {
+      setSharing(false);
     }
   }
 
@@ -130,6 +195,9 @@ export default function ReportPage() {
             <div className="reportActions" data-html2canvas-ignore="true">
               <button className="secondaryButton reportPrintButton" type="button" onClick={downloadPdf} disabled={downloading}>
                 <Download size={17} /> {downloading ? t.report.downloadingPdf : t.report.downloadPdf}
+              </button>
+              <button className="secondaryButton reportPrintButton" type="button" onClick={sharePdf} disabled={sharing}>
+                <Share2 size={17} /> {sharing ? t.report.sharingPdf : t.report.sharePdf}
               </button>
               <button className="secondaryButton reportPrintButton" type="button" onClick={() => window.print()}>
                 <Printer size={17} /> {t.report.print}
