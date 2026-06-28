@@ -35,6 +35,15 @@ function backendAssetUrl(path: string | undefined) {
   return `${apiBase.replace(/\/$/, "")}/${path.replace(/^\/+/, "")}`;
 }
 
+function readFileAsDataUrl(file: File) {
+  return new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result || ""));
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
 export default function AIPage() {
   const { language, t } = useLanguage();
   const [file, setFile] = useState<File | null>(null);
@@ -70,7 +79,19 @@ export default function AIPage() {
     try {
       const response = await fetch(`${apiBase}/analyze`, { method: "POST", body: formData });
       if (!response.ok) throw new Error(t.ai.requestFailed);
-      setResult(await response.json());
+      const analysis = (await response.json()) as AnalysisResult;
+      const originalImage = await readFileAsDataUrl(file);
+      window.localStorage.setItem(
+        "fundusx-latest-ai-report",
+        JSON.stringify({
+          result: analysis,
+          originalImage,
+          fileName: file.name,
+          generatedAt: new Date().toISOString(),
+          apiBase,
+        })
+      );
+      setResult(analysis);
     } catch (err) {
       setError(err instanceof Error ? err.message : t.ai.unknownError);
     } finally {
@@ -183,6 +204,9 @@ export default function AIPage() {
                 <h3>{t.ai.recommendation}</h3>
                 <p>{translateMedicalText(result.recommendation, language)}</p>
               </div>
+              <Link className="primaryButton reportButton" href="/report">
+                {t.ai.viewReport}
+              </Link>
               <p className="muted">{translateMedicalText(result.disclaimer, language)}</p>
               {result.report_id && <p className="muted">报告编号 / Report ID: {result.report_id}</p>}
             </div>

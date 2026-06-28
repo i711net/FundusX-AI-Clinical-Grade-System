@@ -583,6 +583,10 @@ p {
   font-size: 18px;
 }
 
+.reportButton {
+  width: max-content;
+}
+
 .gradeGrid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
@@ -651,12 +655,73 @@ p {
   padding-bottom: 22px;
 }
 
+.reportHeader > div {
+  flex: 1;
+}
+
 .reportHeader h1 {
   font-size: clamp(28px, 4vw, 44px);
 }
 
 .reportBody {
   padding-top: 20px;
+}
+
+.reportMeta {
+  display: flex;
+  gap: 10px 18px;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.reportPrintButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 92px;
+  padding: 0 14px;
+  white-space: nowrap;
+}
+
+.reportImageGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  margin: 20px 0 24px;
+}
+
+.reportImageGrid figure {
+  margin: 0;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  overflow: hidden;
+  background: #101828;
+}
+
+.reportImageGrid img {
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: contain;
+  display: block;
+}
+
+.reportImageGrid figcaption {
+  padding: 9px 10px;
+  background: #ffffff;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 750;
+}
+
+.reportLesions {
+  margin-bottom: 24px;
+}
+
+.reportEmpty {
+  min-height: 300px;
 }
 
 .adminHero {
@@ -948,6 +1013,7 @@ th {
   .adminLayout,
   .adminForm,
   .aiImageGrid,
+  .reportImageGrid,
   .imageLibrary {
     grid-template-columns: 1fr;
   }
@@ -971,6 +1037,10 @@ th {
   }
 
   .adminHero {
+    display: grid;
+  }
+
+  .reportHeader {
     display: grid;
   }
 
