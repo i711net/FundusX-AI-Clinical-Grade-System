@@ -33,6 +33,11 @@ export default function AdminPage() {
   const [imageTypeFilter, setImageTypeFilter] = useState("");
   const [imageGradeFilter, setImageGradeFilter] = useState("");
   const [imageStatusFilter, setImageStatusFilter] = useState("");
+  const [reportTotal, setReportTotal] = useState(0);
+  const [reportPage, setReportPage] = useState(0);
+  const [reportPageSize, setReportPageSize] = useState(50);
+  const [reportSearch, setReportSearch] = useState("");
+  const [reportRiskFilter, setReportRiskFilter] = useState("");
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
   const [uploading, setUploading] = useState(false);
@@ -41,10 +46,10 @@ export default function AdminPage() {
     () => [
       { label: "眼底图片 / Images", value: imageTotal || images.length, icon: ImagePlus },
       { label: "考试 / Quizzes", value: quizzes.length, icon: Database },
-      { label: "AI报告 / Reports", value: reports.length, icon: FileText },
+      { label: "AI报告 / Reports", value: reportTotal || reports.length, icon: FileText },
       { label: "订阅用户 / Users", value: subscriptions.length, icon: KeyRound },
     ],
-    [imageTotal, images.length, quizzes.length, reports.length, subscriptions.length]
+    [imageTotal, images.length, quizzes.length, reportTotal, reports.length, subscriptions.length]
   );
 
   async function loadImages(page = imagePage) {
@@ -87,17 +92,21 @@ export default function AdminPage() {
       setLoading(false);
       return;
     }
-    const [quizResult, reportResult, accessResult] = await Promise.all([
+    const [quizResult, accessResult] = await Promise.all([
       supabase.from("quizzes").select("*").order("created_at", { ascending: false }).limit(50),
-      supabase.from("ai_reports").select("*").order("created_at", { ascending: false }).limit(50),
       fetch("/api/admin/subscriptions").then((response) => response.json()),
     ]);
 
-    if (quizResult.error || reportResult.error || accessResult.error) {
-      setMessage(quizResult.error?.message || reportResult.error?.message || accessResult.error || "加载失败");
+    try {
+      await loadReports();
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "报告加载失败");
+    }
+
+    if (quizResult.error || accessResult.error) {
+      setMessage(quizResult.error?.message || accessResult.error || "加载失败");
     } else {
       setQuizzes((quizResult.data || []) as Quiz[]);
-      setReports((reportResult.data || []) as AiReport[]);
       setSubscriptions((accessResult.subscriptions || []) as SubscriptionAccount[]);
     }
     setLoading(false);
@@ -126,6 +135,49 @@ export default function AdminPage() {
       await loadImages(nextPage);
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "图片加载失败");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function loadReports(page = reportPage) {
+    const params = new URLSearchParams({
+      page: String(page),
+      pageSize: String(reportPageSize),
+    });
+    if (reportSearch.trim()) params.set("search", reportSearch.trim());
+    if (reportRiskFilter) params.set("risk", reportRiskFilter);
+
+    const response = await fetch(`/api/admin/reports?${params.toString()}`);
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(data.error || "报告加载失败");
+    setReports((data.reports || []) as AiReport[]);
+    setReportTotal(Number(data.count || 0));
+  }
+
+  async function applyReportFilters() {
+    setReportPage(0);
+    setLoading(true);
+    setMessage("");
+    try {
+      await loadReports(0);
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "报告加载失败");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function goToReportPage(nextPage: number) {
+    if (nextPage < 0) return;
+    if (nextPage * reportPageSize >= reportTotal && reportTotal > 0) return;
+    setReportPage(nextPage);
+    setLoading(true);
+    setMessage("");
+    try {
+      await loadReports(nextPage);
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "报告加载失败");
     } finally {
       setLoading(false);
     }
@@ -304,6 +356,24 @@ export default function AdminPage() {
     await loadAll();
   }
 
+  async function deleteReport(report: AiReport) {
+    const deletePassword = window.prompt(`请输入删除密码，确认删除报告：${report.diagnosis}\nEnter delete password to delete this report.`);
+    if (!deletePassword) return;
+
+    const response = await fetch("/api/admin/reports", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: report.id, deletePassword }),
+    });
+    const result = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      setMessage(result.error || "删除报告失败");
+      return;
+    }
+    setMessage("报告已删除。");
+    await loadReports();
+  }
+
   async function logout() {
     await fetch("/api/admin/logout", { method: "POST" });
     window.location.href = "/admin/login";
@@ -312,6 +382,9 @@ export default function AdminPage() {
   const imageTotalPages = Math.max(1, Math.ceil(imageTotal / imagePageSize));
   const imageFrom = imageTotal === 0 ? 0 : imagePage * imagePageSize + 1;
   const imageTo = Math.min((imagePage + 1) * imagePageSize, imageTotal);
+  const reportTotalPages = Math.max(1, Math.ceil(reportTotal / reportPageSize));
+  const reportFrom = reportTotal === 0 ? 0 : reportPage * reportPageSize + 1;
+  const reportTo = Math.min((reportPage + 1) * reportPageSize, reportTotal);
 
   return (
     <main className="shell compact">
@@ -565,15 +638,73 @@ export default function AdminPage() {
 
           {tab === "reports" && (
             <div className="adminSection">
-              <h2>报告浏览 / AI Reports</h2>
+              <h2>报告档案 / AI Report Archive</h2>
+              <div className="notice">
+                AI检测默认只保存在用户当前浏览器。只有在报告页点击“保存档案 / Archive”后，才会进入这里。建议不要保存患者姓名、手机号等身份信息。
+              </div>
+              <div className="imageToolbar">
+                <label>
+                  搜索 / Search
+                  <input
+                    value={reportSearch}
+                    onChange={(event) => setReportSearch(event.target.value)}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter") applyReportFilters();
+                    }}
+                    placeholder="诊断、风险、建议 / Diagnosis, risk, recommendation"
+                  />
+                </label>
+                <label>
+                  风险 / Risk
+                  <select value={reportRiskFilter} onChange={(event) => setReportRiskFilter(event.target.value)}>
+                    <option value="">全部风险 / All risks</option>
+                    <option value="Low">低 / Low</option>
+                    <option value="Moderate">中 / Moderate</option>
+                    <option value="High">高 / High</option>
+                  </select>
+                </label>
+                <label>
+                  每页 / Page size
+                  <select value={reportPageSize} onChange={(event) => setReportPageSize(Number(event.target.value))}>
+                    <option value={25}>25</option>
+                    <option value={50}>50</option>
+                    <option value={100}>100</option>
+                  </select>
+                </label>
+                <button className="secondaryButton inlineButton" onClick={applyReportFilters} disabled={loading}>
+                  {loading ? <Loader2 size={16} className="spin" /> : <RefreshCw size={16} />} 搜索 / Apply
+                </button>
+              </div>
+              <div className="paginationBar">
+                <span>
+                  共 {reportTotal} 份 / Total {reportTotal}
+                  {reportTotal > 0 ? `，当前 ${reportFrom}-${reportTo} / Showing ${reportFrom}-${reportTo}` : ""}
+                </span>
+                <div>
+                  <button className="secondaryButton inlineButton" onClick={() => goToReportPage(reportPage - 1)} disabled={loading || reportPage === 0}>
+                    上一页 / Previous
+                  </button>
+                  <strong>{reportPage + 1} / {reportTotalPages}</strong>
+                  <button className="secondaryButton inlineButton" onClick={() => goToReportPage(reportPage + 1)} disabled={loading || reportPage + 1 >= reportTotalPages}>
+                    下一页 / Next
+                  </button>
+                </div>
+              </div>
               <DataTable
-                columns={["诊断 / Diagnosis", "置信度 / Confidence", "风险 / Risk", "时间 / Created"]}
+                columns={["诊断 / Diagnosis", "置信度 / Confidence", "风险 / Risk", "病灶数 / Lesions", "时间 / Created", "操作 / Action"]}
                 rows={reports.map((report) => [
                   report.diagnosis,
                   report.confidence?.toFixed(3) || "-",
                   report.risk_level || "-",
+                  Array.isArray(report.lesions) ? report.lesions.length : 0,
                   new Date(report.created_at).toLocaleString(),
+                  "删除 / Delete",
                 ])}
+                actions={reports.map((report) => (
+                  <button className="dangerButton" onClick={() => deleteReport(report)}>
+                    <Trash2 size={16} /> 删除 / Delete
+                  </button>
+                ))}
               />
             </div>
           )}

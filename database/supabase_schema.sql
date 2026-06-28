@@ -106,9 +106,6 @@ create policy "Public read active quizzes" on quizzes
 create policy "Public read quiz items" on quiz_items
   for select using (true);
 
-create policy "Public read ai reports" on ai_reports
-  for select using (true);
-
 create policy "Public insert quiz responses" on doctor_quiz_responses
   for insert with check (true);
 
@@ -128,5 +125,5 @@ create policy "Prototype insert quizzes" on quizzes
 create policy "Prototype insert quiz items" on quiz_items
   for insert with check (true);
 
-create policy "Prototype insert ai reports" on ai_reports
-  for insert with check (true);
+-- AI reports are intentionally private. The Next.js server API uses the Supabase
+-- service role key for explicit archive/save, admin listing, and deletion.

@@ -101,6 +101,20 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(loginUrl);
   }
 
+  if (pathname === "/api/reports") {
+    const userPayload = await verifySession(
+      request.cookies.get(USER_SESSION_COOKIE)?.value,
+      process.env.ACCESS_SESSION_SECRET || process.env.ADMIN_SESSION_SECRET
+    );
+    const isUserAuthenticated = await isCurrentSubscriptionSession(userPayload);
+    const isAdminAuthenticatedForUserPage = await verifySession(
+      request.cookies.get(ADMIN_SESSION_COOKIE)?.value,
+      process.env.ADMIN_SESSION_SECRET
+    );
+    if (isUserAuthenticated || isAdminAuthenticatedForUserPage) return NextResponse.next();
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   if (isPublicRoute || pathname.startsWith("/api/")) {
     return NextResponse.next();
   }

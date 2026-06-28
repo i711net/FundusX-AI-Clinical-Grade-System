@@ -30,9 +30,13 @@ export type Quiz = {
 
 export type AiReport = {
   id: string;
+  fundus_image_id: string | null;
   image_url: string | null;
   diagnosis: string;
   confidence: number | null;
+  lesions: Array<{ label: string; confidence: number; bbox?: number[]; demo_mode?: boolean }> | null;
+  heatmap_url: string | null;
+  detection_url: string | null;
   risk_level: string | null;
   recommendation: string | null;
   created_at: string;

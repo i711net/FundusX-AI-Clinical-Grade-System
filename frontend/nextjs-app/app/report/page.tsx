@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ArrowLeft, Download, FileText, Printer, Share2 } from "lucide-react";
+import { ArrowLeft, Database, Download, FileText, Printer, Share2 } from "lucide-react";
 import { AccessBadge } from "../components/AccessBadge";
 import { LanguageToggle } from "../components/LanguageToggle";
 import { translateLesionLabel, translateMedicalText, useLanguage } from "../i18n";
@@ -67,8 +67,10 @@ export default function ReportPage() {
   const [downloading, setDownloading] = useState(false);
   const [sharing, setSharing] = useState(false);
   const [preparing, setPreparing] = useState(false);
+  const [savingArchive, setSavingArchive] = useState(false);
   const [pdfBlob, setPdfBlob] = useState<Blob | null>(null);
   const [pdfMessage, setPdfMessage] = useState("");
+  const [archiveMessage, setArchiveMessage] = useState("");
   const reportRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
@@ -234,6 +236,29 @@ export default function ReportPage() {
     }
   }
 
+  async function saveToArchive() {
+    if (!report) return;
+    setSavingArchive(true);
+    setArchiveMessage("");
+    try {
+      const response = await fetch("/api/reports", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          result: report.result,
+          apiBase: report.apiBase,
+        }),
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.error || "保存失败 / Save failed");
+      setArchiveMessage(`已保存到后台档案 / Saved to admin archive: ${data.report?.id || ""}`);
+    } catch (error) {
+      setArchiveMessage(error instanceof Error ? error.message : "保存失败 / Save failed");
+    } finally {
+      setSavingArchive(false);
+    }
+  }
+
   return (
     <main className="shell compact">
       <div className="pageTools">
@@ -255,6 +280,9 @@ export default function ReportPage() {
               <button className="secondaryButton reportPrintButton" type="button" onClick={sharePdf} disabled={sharing || preparing}>
                 <Share2 size={17} /> {sharing ? t.report.sharingPdf : t.report.sharePdf}
               </button>
+              <button className="secondaryButton reportPrintButton" type="button" onClick={saveToArchive} disabled={savingArchive}>
+                <Database size={17} /> {savingArchive ? "保存中 / Saving" : "保存档案 / Archive"}
+              </button>
               <button className="secondaryButton reportPrintButton" type="button" onClick={() => window.print()}>
                 <Printer size={17} /> {t.report.print}
               </button>
@@ -264,6 +292,11 @@ export default function ReportPage() {
         {report && pdfMessage && (
           <p className={`pdfStatus ${pdfBlob ? "ready" : ""}`} data-html2canvas-ignore="true">
             {pdfMessage}
+          </p>
+        )}
+        {report && archiveMessage && (
+          <p className={`pdfStatus ${archiveMessage.includes("已保存") ? "ready" : ""}`} data-html2canvas-ignore="true">
+            {archiveMessage}
           </p>
         )}
 
