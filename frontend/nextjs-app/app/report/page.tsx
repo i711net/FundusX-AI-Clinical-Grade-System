@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
-import { ArrowLeft, FileText, Printer } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { ArrowLeft, Download, FileText, Printer } from "lucide-react";
 import { LanguageToggle } from "../components/LanguageToggle";
 import { translateLesionLabel, translateMedicalText, useLanguage } from "../i18n";
 
@@ -32,9 +32,26 @@ function assetUrl(path: string | undefined, apiBase: string | undefined) {
   return `${(apiBase || "").replace(/\/$/, "")}/${path.replace(/^\/+/, "")}`;
 }
 
+function reportFileName(generatedAt: string | undefined) {
+  const date = generatedAt ? new Date(generatedAt) : new Date();
+  const pad = (value: number) => String(value).padStart(2, "0");
+  const stamp = [
+    date.getFullYear(),
+    pad(date.getMonth() + 1),
+    pad(date.getDate()),
+    "-",
+    pad(date.getHours()),
+    pad(date.getMinutes()),
+    pad(date.getSeconds()),
+  ].join("");
+  return `FundusX-AI-report-${stamp}.pdf`;
+}
+
 export default function ReportPage() {
   const { language, t } = useLanguage();
   const [report, setReport] = useState<StoredReport | null>(null);
+  const [downloading, setDownloading] = useState(false);
+  const reportRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
     const raw = window.localStorage.getItem("fundusx-latest-ai-report");
@@ -55,13 +72,54 @@ export default function ReportPage() {
     [report]
   );
 
+  async function downloadPdf() {
+    if (!reportRef.current || !report) return;
+    setDownloading(true);
+    try {
+      const [{ default: html2canvas }, { jsPDF }] = await Promise.all([
+        import("html2canvas"),
+        import("jspdf"),
+      ]);
+      await document.fonts?.ready;
+      const canvas = await html2canvas(reportRef.current, {
+        backgroundColor: "#ffffff",
+        scale: Math.min(2, window.devicePixelRatio || 1),
+        useCORS: true,
+        ignoreElements: (element) => element.hasAttribute("data-html2canvas-ignore"),
+      });
+      const pdf = new jsPDF("p", "mm", "a4");
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+      const margin = 8;
+      const usableWidth = pageWidth - margin * 2;
+      const imageHeight = (canvas.height * usableWidth) / canvas.width;
+      let remainingHeight = imageHeight;
+      let y = margin;
+
+      const imageData = canvas.toDataURL("image/png");
+      pdf.addImage(imageData, "PNG", margin, y, usableWidth, imageHeight);
+      remainingHeight -= pageHeight - margin * 2;
+
+      while (remainingHeight > 0) {
+        pdf.addPage();
+        y = margin - (imageHeight - remainingHeight);
+        pdf.addImage(imageData, "PNG", margin, y, usableWidth, imageHeight);
+        remainingHeight -= pageHeight - margin * 2;
+      }
+
+      pdf.save(reportFileName(report.generatedAt));
+    } finally {
+      setDownloading(false);
+    }
+  }
+
   return (
     <main className="shell compact">
       <div className="pageTools">
         <Link className="backLink" href="/"><ArrowLeft size={18} /> {t.nav.home}</Link>
         <LanguageToggle />
       </div>
-      <section className="report">
+      <section className="report" ref={reportRef}>
         <div className="reportHeader">
           <FileText size={26} />
           <div>
@@ -69,9 +127,14 @@ export default function ReportPage() {
             <p>{report ? t.report.sourceValue : t.report.intro}</p>
           </div>
           {report && (
-            <button className="secondaryButton reportPrintButton" type="button" onClick={() => window.print()}>
-              <Printer size={17} /> {t.report.print}
-            </button>
+            <div className="reportActions" data-html2canvas-ignore="true">
+              <button className="secondaryButton reportPrintButton" type="button" onClick={downloadPdf} disabled={downloading}>
+                <Download size={17} /> {downloading ? t.report.downloadingPdf : t.report.downloadPdf}
+              </button>
+              <button className="secondaryButton reportPrintButton" type="button" onClick={() => window.print()}>
+                <Printer size={17} /> {t.report.print}
+              </button>
+            </div>
           )}
         </div>
 
@@ -113,13 +176,13 @@ export default function ReportPage() {
               )}
               {heatmapUrl && (
                 <figure>
-                  <img src={heatmapUrl} alt="Grad-CAM heatmap" />
+                  <img src={heatmapUrl} alt="Grad-CAM heatmap" crossOrigin="anonymous" />
                   <figcaption>{t.report.heatmap} / Grad-CAM</figcaption>
                 </figure>
               )}
               {detectionUrl && (
                 <figure>
-                  <img src={detectionUrl} alt="Lesion detection" />
+                  <img src={detectionUrl} alt="Lesion detection" crossOrigin="anonymous" />
                   <figcaption>{t.report.detectionImage} / Lesion detection</figcaption>
                 </figure>
               )}

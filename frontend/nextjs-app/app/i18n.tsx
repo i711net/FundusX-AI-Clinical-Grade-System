@@ -106,6 +106,8 @@ export const translations = {
       detectionImage: "Lesion detection image",
       lesions: "Lesion candidates",
       print: "Print",
+      downloadPdf: "Download PDF",
+      downloadingPdf: "Generating PDF...",
     },
     medical: {
       "No diabetic retinopathy": "No diabetic retinopathy",
@@ -221,6 +223,8 @@ export const translations = {
       detectionImage: "病灶检测图",
       lesions: "疑似病灶",
       print: "打印",
+      downloadPdf: "下载PDF",
+      downloadingPdf: "正在生成PDF...",
     },
     medical: {
       "No diabetic retinopathy": "无糖尿病视网膜病变",

@@ -677,11 +677,19 @@ p {
   line-height: 1.5;
 }
 
+.reportActions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+}
+
 .reportPrintButton {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 8px;
-  min-width: 92px;
+  min-width: 112px;
   padding: 0 14px;
   white-space: nowrap;
 }
