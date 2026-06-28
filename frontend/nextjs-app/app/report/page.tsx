@@ -65,6 +65,9 @@ export default function ReportPage() {
   const [report, setReport] = useState<StoredReport | null>(null);
   const [downloading, setDownloading] = useState(false);
   const [sharing, setSharing] = useState(false);
+  const [preparing, setPreparing] = useState(false);
+  const [pdfBlob, setPdfBlob] = useState<Blob | null>(null);
+  const [pdfMessage, setPdfMessage] = useState("");
   const reportRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
@@ -86,12 +89,38 @@ export default function ReportPage() {
     [report]
   );
 
+  useEffect(() => {
+    if (!report) return;
+    const timer = window.setTimeout(() => {
+      preparePdf();
+    }, 800);
+    return () => window.clearTimeout(timer);
+  }, [report, language]);
+
+  async function waitForImages(container: HTMLElement) {
+    const images = Array.from(container.querySelectorAll("img"));
+    await Promise.all(
+      images.map(
+        (image) =>
+          new Promise<void>((resolve) => {
+            if (image.complete) {
+              resolve();
+              return;
+            }
+            image.onload = () => resolve();
+            image.onerror = () => resolve();
+          })
+      )
+    );
+  }
+
   async function createPdfBlob() {
     if (!reportRef.current || !report) return null;
     const [{ default: html2canvas }, { jsPDF }] = await Promise.all([
       import("html2canvas"),
       import("jspdf"),
     ]);
+    await waitForImages(reportRef.current);
     await document.fonts?.ready;
     const canvas = await html2canvas(reportRef.current, {
       backgroundColor: "#ffffff",
@@ -122,17 +151,40 @@ export default function ReportPage() {
     return pdf.output("blob");
   }
 
+  async function preparePdf() {
+    if (!report) return null;
+    setPreparing(true);
+    setPdfMessage(t.report.preparingPdf);
+    try {
+      const blob = await createPdfBlob();
+      setPdfBlob(blob);
+      setPdfMessage(blob ? t.report.pdfReady : t.report.pdfFailed);
+      return blob;
+    } catch (error) {
+      console.error(error);
+      setPdfBlob(null);
+      setPdfMessage(t.report.pdfFailed);
+      return null;
+    } finally {
+      setPreparing(false);
+    }
+  }
+
   async function saveBlob(blob: Blob, fileName: string) {
     const picker = (window as SaveFilePickerWindow).showSaveFilePicker;
     if (picker) {
-      const handle = await picker({
-        suggestedName: fileName,
-        types: [{ description: "PDF", accept: { "application/pdf": [".pdf"] } }],
-      });
-      const writable = await handle.createWritable();
-      await writable.write(blob);
-      await writable.close();
-      return;
+      try {
+        const handle = await picker({
+          suggestedName: fileName,
+          types: [{ description: "PDF", accept: { "application/pdf": [".pdf"] } }],
+        });
+        const writable = await handle.createWritable();
+        await writable.write(blob);
+        await writable.close();
+        return;
+      } catch (error) {
+        if (error instanceof DOMException && error.name === "AbortError") return;
+      }
     }
 
     const url = URL.createObjectURL(blob);
@@ -149,7 +201,7 @@ export default function ReportPage() {
     if (!report) return;
     setDownloading(true);
     try {
-      const blob = await createPdfBlob();
+      const blob = pdfBlob || await preparePdf();
       if (blob) await saveBlob(blob, reportFileName(report.generatedAt));
     } finally {
       setDownloading(false);
@@ -160,7 +212,7 @@ export default function ReportPage() {
     if (!report) return;
     setSharing(true);
     try {
-      const blob = await createPdfBlob();
+      const blob = pdfBlob || await preparePdf();
       if (!blob) return;
       const fileName = reportFileName(report.generatedAt);
       const file = new File([blob], fileName, { type: "application/pdf" });
@@ -173,6 +225,9 @@ export default function ReportPage() {
       } else {
         await saveBlob(blob, fileName);
       }
+    } catch (error) {
+      console.error(error);
+      setPdfMessage(t.report.pdfFailed);
     } finally {
       setSharing(false);
     }
@@ -196,7 +251,7 @@ export default function ReportPage() {
               <button className="secondaryButton reportPrintButton" type="button" onClick={downloadPdf} disabled={downloading}>
                 <Download size={17} /> {downloading ? t.report.downloadingPdf : t.report.downloadPdf}
               </button>
-              <button className="secondaryButton reportPrintButton" type="button" onClick={sharePdf} disabled={sharing}>
+              <button className="secondaryButton reportPrintButton" type="button" onClick={sharePdf} disabled={sharing || preparing}>
                 <Share2 size={17} /> {sharing ? t.report.sharingPdf : t.report.sharePdf}
               </button>
               <button className="secondaryButton reportPrintButton" type="button" onClick={() => window.print()}>
@@ -205,6 +260,11 @@ export default function ReportPage() {
             </div>
           )}
         </div>
+        {report && pdfMessage && (
+          <p className={`pdfStatus ${pdfBlob ? "ready" : ""}`} data-html2canvas-ignore="true">
+            {pdfMessage}
+          </p>
+        )}
 
         {!report && (
           <div className="emptyResult reportEmpty">

@@ -694,6 +694,17 @@ p {
   white-space: nowrap;
 }
 
+.pdfStatus {
+  margin: 12px 0 0;
+  color: #9a3412;
+  font-size: 13px;
+  font-weight: 750;
+}
+
+.pdfStatus.ready {
+  color: var(--success);
+}
+
 .reportImageGrid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));

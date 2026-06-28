@@ -110,6 +110,9 @@ export const translations = {
       downloadingPdf: "Generating PDF...",
       sharePdf: "Share PDF",
       sharingPdf: "Preparing share...",
+      preparingPdf: "Preparing PDF...",
+      pdfReady: "PDF is ready for download or sharing.",
+      pdfFailed: "PDF generation failed. Please try Print instead.",
     },
     medical: {
       "No diabetic retinopathy": "No diabetic retinopathy",
@@ -229,6 +232,9 @@ export const translations = {
       downloadingPdf: "正在生成PDF...",
       sharePdf: "分享PDF",
       sharingPdf: "正在准备分享...",
+      preparingPdf: "正在准备PDF...",
+      pdfReady: "PDF已准备好，可以下载或分享。",
+      pdfFailed: "PDF生成失败，请先使用打印功能。",
     },
     medical: {
       "No diabetic retinopathy": "无糖尿病视网膜病变",
